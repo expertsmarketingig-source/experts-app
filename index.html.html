@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EXPERTS · App Técnico</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f5;
+  --white: #ffffff;
+  --brand: #1a6b2f;
+  --brand-dark: #124a20;
+  --brand-light: #e8f5ec;
+  --accent: #f5a623;
+  --danger: #e03131;
+  --text: #1a1a1a;
+  --muted: #6b7280;
+  --border: #dde1e7;
+  --radius: 14px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.16);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); font-family: 'Barlow', sans-serif; color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+
+/* HEADER */
+.app-header { background: var(--brand); color: white; padding: 16px 20px 14px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 12px rgba(0,0,0,0.2); }
+.logo-box { background: white; color: var(--brand); font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; padding: 6px 10px; letter-spacing: 1px; line-height: 1; }
+.logo-box span { font-size: 0.65rem; display: block; letter-spacing: 2px; font-weight: 600; color: var(--muted); }
+.header-info h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.5px; }
+.header-info p { font-size: 0.75rem; opacity: 0.8; margin-top: 1px; }
+
+/* NAV */
+.nav-tabs { display: flex; background: var(--brand-dark); overflow-x: auto; scrollbar-width: none; }
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab { flex: 1; min-width: 80px; padding: 11px 8px; background: none; border: none; color: rgba(255,255,255,0.6); font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 600; letter-spacing: 0.5px; cursor: pointer; text-transform: uppercase; border-bottom: 3px solid transparent; transition: all .2s; white-space: nowrap; }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* SCREENS */
+.screen { display: none; padding: 16px; }
+.screen.active { display: block; }
+
+/* CARD */
+.card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; margin-bottom: 14px; }
+.card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--brand); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card-title::before { content: ''; width: 4px; height: 18px; background: var(--brand); border-radius: 2px; flex-shrink: 0; }
+
+/* FORM */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.field input, .field select, .field textarea { width: 100%; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; font-family: 'Barlow', sans-serif; font-size: 0.95rem; color: var(--text); outline: none; transition: border-color .2s; -webkit-appearance: none; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--brand); background: white; }
+.field textarea { resize: vertical; min-height: 80px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+
+/* TABLES */
+.monitor-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.monitor-table th { background: var(--brand); color: white; padding: 7px 6px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; letter-spacing: 0.5px; text-align: center; }
+.monitor-table th:first-child { text-align: left; }
+.monitor-table td { border: 1px solid var(--border); padding: 4px 3px; text-align: center; }
+.monitor-table td:first-child { text-align: left; padding-left: 8px; font-weight: 500; font-size: 0.85rem; }
+.monitor-table input[type=number] { width: 100%; border: none; background: var(--brand-light); padding: 6px 4px; text-align: center; font-size: 0.88rem; font-family: 'Barlow', sans-serif; outline: none; border-radius: 4px; }
+.monitor-table select { width: 100%; border: none; background: var(--brand-light); padding: 6px 2px; font-size: 0.88rem; text-align: center; outline: none; border-radius: 4px; cursor: pointer; }
+.table-subtitle { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ESTADO */
+.estado-btns { display: flex; gap: 8px; }
+.estado-btn { flex: 1; padding: 10px 6px; border: 2px solid var(--border); border-radius: 8px; background: white; font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all .2s; }
+.estado-btn[data-val="verde"].selected { background: #22c55e; border-color: #16a34a; color: white; }
+.estado-btn[data-val="amarillo"].selected { background: #f59e0b; border-color: #d97706; color: white; }
+.estado-btn[data-val="rojo"].selected { background: #ef4444; border-color: #dc2626; color: white; }
+
+/* OBS CHECKS */
+.obs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.obs-item { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 10px; cursor: pointer; transition: all .2s; font-size: 0.82rem; font-weight: 500; }
+.obs-item.checked { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+.obs-check { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all .2s; }
+.obs-item.checked .obs-check { background: var(--brand); border-color: var(--brand); color: white; }
+
+/* ROEDORES */
+.roedores-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.roedores-table th { background: var(--brand); color: white; padding: 7px 8px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; }
+.roedores-table td { border: 1px solid var(--border); padding: 6px 8px; }
+.roedores-table td:first-child { font-weight: 500; }
+.si-no { display: flex; gap: 4px; }
+.sn-btn { flex: 1; padding: 5px 4px; border: 1.5px solid var(--border); border-radius: 5px; background: white; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: all .15s; }
+.sn-btn.si-sel { background: #22c55e; border-color: #16a34a; color: white; }
+.sn-btn.no-sel { background: #ef4444; border-color: #dc2626; color: white; }
+.roedores-table input[type=text] { width: 100%; border: 1px solid var(--border); border-radius: 5px; padding: 5px 7px; font-size: 0.82rem; background: var(--bg); }
+
+/* APLICACIONES */
+.aplic-block { border: 1.5px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+.aplic-title { font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--brand-dark); margin-bottom: 10px; }
+.tipo-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.tipo-btn { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 20px; background: white; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all .15s; }
+.tipo-btn.sel { background: var(--brand); border-color: var(--brand); color: white; }
+
+/* TRAMPA */
+.trampa-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.trampa-table th { background: var(--brand); color: white; padding: 7px; font-family: 'Barlow Condensed', sans-serif; font-weight: 600; text-align: center; }
+.trampa-table td { border: 1px solid var(--border); padding: 4px 3px; text-align: center; }
+.trampa-table select { width: 100%; border: none; background: var(--brand-light); padding: 5px 2px; font-size: 0.8rem; outline: none; border-radius: 3px; }
+
+/* RECOM */
+.recom-grid { display: grid; gap: 8px; }
+.recom-item { display: flex; align-items: center; gap: 10px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 8px; padding: 10px 12px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all .2s; }
+.recom-item.checked { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+.recom-check { width: 18px; height: 18px; border: 2px solid var(--border); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: all .2s; }
+.recom-item.checked .recom-check { background: var(--brand); border-color: var(--brand); color: white; }
+
+/* TIMER */
+.timer-card { background: var(--brand); border-radius: var(--radius); padding: 28px 20px; text-align: center; color: white; margin-bottom: 14px; box-shadow: var(--shadow-lg); }
+.timer-display { font-family: 'Barlow Condensed', sans-serif; font-size: 4.5rem; font-weight: 800; letter-spacing: 4px; line-height: 1; margin: 16px 0; text-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+.timer-label { font-size: 0.8rem; opacity: 0.75; letter-spacing: 2px; text-transform: uppercase; }
+.timer-status { font-size: 0.85rem; opacity: 0.9; margin-top: 8px; min-height: 20px; }
+.timer-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 15px 40px; border: none; border-radius: 50px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: all .2s; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
+.timer-btn-start { background: var(--accent); color: #1a1a1a; }
+.timer-btn-stop { background: var(--danger); color: white; }
+.timer-btn:active { transform: scale(0.96); }
+
+/* HISTORY */
+.history-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.history-header { background: var(--bg); padding: 12px 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+.history-item { padding: 13px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 0.88rem; }
+.history-item:last-child { border-bottom: none; }
+.history-duration { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--brand); }
+.history-meta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+/* BUTTONS */
+.btn-primary { width: 100%; padding: 15px; background: var(--brand); color: white; border: none; border-radius: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .2s; box-shadow: var(--shadow); }
+.btn-primary:active { background: var(--brand-dark); }
+.btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+.btn-secondary { width: 100%; padding: 14px; background: white; color: var(--brand); border: 2px solid var(--brand); border-radius: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; margin-top: 10px; }
+.btn-wa { width: 100%; padding: 16px; background: #25d366; color: white; border: none; border-radius: 10px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 700; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 4px 16px rgba(37,211,102,0.35); transition: all .2s; }
+.btn-wa:active { transform: scale(0.98); }
+
+/* DIVIDER */
+.sec-divider { font-family: 'Barlow Condensed', sans-serif; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--muted); margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+.sec-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.planilla-num { font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; color: var(--muted); text-align: right; margin-bottom: 4px; letter-spacing: 1px; }
+
+/* WA PREVIEW */
+.wa-preview { background: #e5ddd5; border-radius: 12px; padding: 16px; font-size: 0.82rem; line-height: 1.6; max-height: 300px; overflow-y: auto; white-space: pre-wrap; font-family: 'Barlow', sans-serif; color: #1a1a1a; margin-bottom: 12px; border: 1px solid #ccc; }
+
+/* BOTTOM BAR */
+.bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--border); display: flex; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); z-index: 100; }
+.bottom-btn { flex: 1; padding: 10px 4px 8px; background: none; border: none; display: flex; flex-direction: column; align-items: center; gap: 3px; font-family: 'Barlow', sans-serif; font-size: 0.65rem; font-weight: 600; color: var(--muted); cursor: pointer; transition: color .15s; text-transform: uppercase; letter-spacing: 0.3px; }
+.bottom-btn.active { color: var(--brand); }
+.bottom-icon { font-size: 1.4rem; line-height: 1; }
+
+/* ═══════════════════════════════════
+   MODAL FICHA DE CIERRE
+═══════════════════════════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 500;
+  overflow-y: auto;
+  padding: 16px 0 40px;
+  backdrop-filter: blur(3px);
+}
+.modal-overlay.open { display: flex; flex-direction: column; align-items: center; animation: fadeOverlay .25s ease; }@keyframes fadeOverlay { from { opacity:0; } to { opacity:1; } }
+
+.modal-sheet {
+  background: white;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 20px 20px 16px 16px;
+  margin: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  animation: slideUp .3s cubic-bezier(.2,.8,.4,1);
+}
+.modal-body { padding: 18px; padding-bottom: 32px; }@keyframes slideUp { from { transform: translateY(60px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+.modal-header {
+  background: var(--brand);
+  color: white;
+  padding: 20px 20px 16px;
+  position: relative;
+}
+.modal-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.modal-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.3rem; font-weight: 800; letter-spacing: 0.5px; }
+.modal-subtitle { font-size: 0.8rem; opacity: 0.8; margin-top: 2px; }
+.modal-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.modal-summary-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.modal-badge {
+  background: rgba(255,255,255,0.18);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.modal-badge strong { color: var(--accent); }
+
+.modal-body { padding: 18px; padding-bottom: 36px; }
+
+/* QUIMICOS TABLE */
+.quimicos-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.quimicos-table th {
+  background: var(--brand-dark);
+  color: white;
+  padding: 9px 6px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+.quimicos-table th:first-child { text-align: left; padding-left: 10px; }
+.quimicos-table td { border: 1px solid var(--border); padding: 3px 4px; }
+.quimicos-table tr:nth-child(even) td { background: #fafafa; }
+
+.quimicos-table select {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 7px 4px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.82rem;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+  -webkit-appearance: auto;
+}
+.quimicos-table input[type=number], .quimicos-table input[type=text] {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 7px 6px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.88rem;
+  text-align: center;
+  outline: none;
+  color: var(--text);
+}
+.quimicos-table input:focus { background: var(--brand-light); }
+.quimicos-table select:focus { background: var(--brand-light); }
+
+/* PAGO BTNS */
+.pago-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.pago-btn { padding: 10px 16px; border: 2px solid var(--border); border-radius: 8px; background: white; font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; transition: all .2s; flex: 1; min-width: 80px; text-align: center; }
+.pago-btn.sel { background: var(--brand); border-color: var(--brand); color: white; }
+
+/* COMPLETADO BADGE */
+.completado-banner {
+  display: none;
+  background: var(--brand-light);
+  border: 1.5px solid var(--brand);
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.completado-banner.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="logo-box">EX<span>PERTS</span></div>
+  <div class="header-info">
+    <h2>App del Técnico</h2>
+    <p id="headerDate">Cargando fecha...</p>
+  </div>
+</div>
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="switchScreen('timer')">⏱ Tiempo</button>
+  <button class="nav-tab" onclick="switchScreen('form')">📋 Planilla</button>
+  <button class="nav-tab" onclick="switchScreen('send')">📤 Enviar</button>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: TEMPORIZADOR
+══════════════════════════════════ -->
+<div id="screen-timer" class="screen active">
+
+  <div class="timer-card">
+    <div class="timer-label">Tiempo de Servicio</div>
+    <div class="timer-display" id="timerDisplay">00:00:00</div>
+    <div class="timer-status" id="timerStatus">Presioná INICIAR cuando llegues al cliente</div>
+    <button class="timer-btn timer-btn-start" id="timerBtn" onclick="toggleTimer()">
+      ▶ INICIAR SERVICIO
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Datos del Servicio</div>
+    <div class="field">
+      <label>Establecimiento / Cliente</label>
+      <input type="text" id="t_cliente" placeholder="Nombre del cliente" oninput="syncField('f_cliente', this.value)">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="t_fecha" oninput="syncField('f_fecha', this.value)">
+      </div>
+      <div class="field">
+        <label>Técnico</label>
+        <input type="text" id="t_tecnico" placeholder="Tu nombre">
+      </div>
+    </div>
+  </div>
+
+  <div class="history-card" id="historyCard" style="display:none">
+    <div class="history-header">Servicios registrados hoy</div>
+    <div id="historyList"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: PLANILLA
+══════════════════════════════════ -->
+<div id="screen-form" class="screen">
+
+  <div class="card">
+    <div class="planilla-num">N° 00000401</div>
+    <div class="card-title">Datos Generales</div>
+    <div class="field"><label>Establecimiento</label><input type="text" id="f_cliente" placeholder="Nombre del cliente"></div>
+    <div class="field"><label>Dirección</label><input type="text" id="f_direccion" placeholder="Dirección"></div>
+    <div class="row2">
+      <div class="field"><label>Fecha</label><input type="date" id="f_fecha"></div>
+      <div class="field"><label>Hora</label><input type="time" id="f_hora"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">1. Monitoreo de Artrópodos</div>
+    <div class="sec-divider">a) Interior</div>
+    <table class="monitor-table">
+      <thead><tr><th>Tipo</th><th>Nula</th><th>Baja</th><th>Media</th><th>Alta</th></tr></thead>
+      <tbody>
+        <tr><td>Voladores</td><td><select id="iv_nula"><option value=""></option><option>✓</option></select></td><td><select id="iv_baja"><option value=""></option><option>✓</option></select></td><td><select id="iv_media"><option value=""></option><option>✓</option></select></td><td><select id="iv_alta"><option value=""></option><option>✓</option></select></td></tr>
+        <tr><td>Rastreros</td><td><select id="ir_nula"><option value=""></option><option>✓</option></select></td><td><select id="ir_baja"><option value=""></option><option>✓</option></select></td><td><select id="ir_media"><option value=""></option><option>✓</option></select></td><td><select id="ir_alta"><option value=""></option><option>✓</option></select></td></tr>
+        <tr><td>Arácnidos</td><td><select id="ia_nula"><option value=""></option><option>✓</option></select></td><td><select id="ia_baja"><option value=""></option><option>✓</option></select></td><td><select id="ia_media"><option value=""></option><option>✓</option></select></td><td><select id="ia_alta"><option value=""></option><option>✓</option></select></td></tr>
+      </tbody>
+    </table>
+    <div class="sec-divider">b) Exterior</div>
+    <table class="monitor-table">
+      <thead><tr><th>Tipo</th><th>Nula</th><th>Baja</th><th>Media</th><th>Alta</th></tr></thead>
+      <tbody>
+        <tr><td>Voladores</td><td><select id="ev_nula"><option value=""></option><option>✓</option></select></td><td><select id="ev_baja"><option value=""></option><option>✓</option></select></td><td><select id="ev_media"><option value=""></option><option>✓</option></select></td><td><select id="ev_alta"><option value=""></option><option>✓</option></select></td></tr>
+        <tr><td>Rastreros</td><td><select id="er_nula"><option value=""></option><option>✓</option></select></td><td><select id="er_baja"><option value=""></option><option>✓</option></select></td><td><select id="er_media"><option value=""></option><option>✓</option></select></td><td><select id="er_alta"><option value=""></option><option>✓</option></select></td></tr>
+        <tr><td>Arácnidos</td><td><select id="ea_nula"><option value=""></option><option>✓</option></select></td><td><select id="ea_baja"><option value=""></option><option>✓</option></select></td><td><select id="ea_media"><option value=""></option><option>✓</option></select></td><td><select id="ea_alta"><option value=""></option><option>✓</option></select></td></tr>
+      </tbody>
+    </table>
+    <div class="sec-divider">c) Trampa de Luz</div>
+    <table class="trampa-table">
+      <thead><tr><th>TL</th><th>V</th><th>RP</th><th>RT</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><select><option value=""></option><option>✓</option></select></td><td><select><option value=""></option><option>✓</option></select></td><td><select><option value=""></option><option>✓</option></select></td></tr>
+        <tr><td>2</td><td><select><option value=""></option><option>✓</option></select></td><td><select><option value=""></option><option>✓</option></select></td><td><select><option value=""></option><option>✓</option></select></td></tr>
+        <tr><td>3</td><td><select><option value=""></option><option>✓</option></select></td><td><select><option value=""></option><option>✓</option></select></td><td><select><option value=""></option><option>✓</option></select></td></tr>
+      </tbody>
+    </table>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:6px;">V: verificado · RP: reemplaza placa · RT: reemplaza tubo</div>
+    <div class="sec-divider">d) Estado Sanitario Interior</div>
+    <div class="estado-btns" id="estadoInt">
+      <button class="estado-btn" data-val="verde" onclick="selEstado(this,'int')">VERDE</button>
+      <button class="estado-btn" data-val="amarillo" onclick="selEstado(this,'int')">AMARILLO</button>
+      <button class="estado-btn" data-val="rojo" onclick="selEstado(this,'int')">ROJO</button>
+    </div>
+    <div class="sec-divider">e) Estado Sanitario Exterior</div>
+    <div class="estado-btns" id="estadoExt">
+      <button class="estado-btn" data-val="verde" onclick="selEstado(this,'ext')">VERDE</button>
+      <button class="estado-btn" data-val="amarillo" onclick="selEstado(this,'ext')">AMARILLO</button>
+      <button class="estado-btn" data-val="rojo" onclick="selEstado(this,'ext')">ROJO</button>
+    </div>
+    <div class="sec-divider">Observaciones</div>
+    <div class="obs-grid" id="obsGrid">
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Mal almacenamiento</div>
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Agujeros sin tapar</div>
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Exteriores sucios</div>
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Derrames</div>
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Pasto alto</div>
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Faltantes azulejos/rejillas</div>
+      <div class="obs-item" onclick="toggleObs(this)"><div class="obs-check"></div>Grietas</div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Otras observaciones</label>
+      <input type="text" id="obs_otras" placeholder="Describir...">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">2. Monitoreo de Roedores</div>
+    <table class="roedores-table">
+      <thead><tr><th>Indicio</th><th>Sí / No</th><th>Ubicación</th></tr></thead>
+      <tbody>
+        <tr><td>Orina</td><td><div class="si-no"><button class="sn-btn" onclick="selSN(this,'si')">SÍ</button><button class="sn-btn" onclick="selSN(this,'no')">NO</button></div></td><td><input type="text" placeholder="Ubicación..."></td></tr>
+        <tr><td>Excretas</td><td><div class="si-no"><button class="sn-btn" onclick="selSN(this,'si')">SÍ</button><button class="sn-btn" onclick="selSN(this,'no')">NO</button></div></td><td><input type="text" placeholder="Ubicación..."></td></tr>
+        <tr><td>Elementos roídos</td><td><div class="si-no"><button class="sn-btn" onclick="selSN(this,'si')">SÍ</button><button class="sn-btn" onclick="selSN(this,'no')">NO</button></div></td><td><input type="text" placeholder="Ubicación..."></td></tr>
+        <tr><td>Roedor muerto</td><td><div class="si-no"><button class="sn-btn" onclick="selSN(this,'si')">SÍ</button><button class="sn-btn" onclick="selSN(this,'no')">NO</button></div></td><td><input type="text" placeholder="Ubicación..."></td></tr>
+        <tr><td>Roedor vivo</td><td><div class="si-no"><button class="sn-btn" onclick="selSN(this,'si')">SÍ</button><button class="sn-btn" onclick="selSN(this,'no')">NO</button></div></td><td><input type="text" placeholder="Ubicación..."></td></tr>
+        <tr><td>Madriguera</td><td><div class="si-no"><button class="sn-btn" onclick="selSN(this,'si')">SÍ</button><button class="sn-btn" onclick="selSN(this,'no')">NO</button></div></td><td><input type="text" placeholder="Ubicación..."></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">3. Recomendaciones</div>
+    <div class="recom-grid" id="recomGrid">
+      <div class="recom-item" onclick="toggleRecom(this)"><div class="recom-check"></div>Puertas y ventanas cerradas</div>
+      <div class="recom-item" onclick="toggleRecom(this)"><div class="recom-check"></div>Mejorar higiene</div>
+      <div class="recom-item" onclick="toggleRecom(this)"><div class="recom-check"></div>Cambiar/amurar rejillas</div>
+      <div class="recom-item" onclick="toggleRecom(this)"><div class="recom-check"></div>Colocar burletes</div>
+      <div class="recom-item" onclick="toggleRecom(this)"><div class="recom-check"></div>Sellar aberturas</div>
+    </div>
+    <div class="field" style="margin-top:10px">
+      <label>Otras recomendaciones</label>
+      <input type="text" id="recom_otras" placeholder="Especificar...">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">4. Control de Plagas — Aplicaciones</div>
+    <div class="aplic-block">
+      <div class="aplic-title">🐀 Roedores</div>
+      <div class="tipo-btns">
+        <button class="tipo-btn" onclick="toggleTipo(this)">Preventivo</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Desvío</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Adicional</button>
+      </div>
+      <div class="field"><label>Ubicación</label><input type="text" id="ap_rod_ub" placeholder="Ej: depósito, cocina..."></div>
+      <div class="tipo-btns">
+        <button class="tipo-btn" onclick="toggleTipo(this)">Cebo</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Trampa Mec.</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Placa pegamento</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Polvo contacto</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Producto</label><input type="text" id="ap_rod_prod" placeholder="Nombre..."></div>
+        <div class="field"><label>Dosis</label><input type="text" id="ap_rod_dosis" placeholder="Ej: 50g"></div>
+      </div>
+    </div>
+    <div class="aplic-block">
+      <div class="aplic-title">🪳 Rastreros + Desinfección</div>
+      <div class="tipo-btns">
+        <button class="tipo-btn" onclick="toggleTipo(this)">Preventivo</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Desvío</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Adicional</button>
+      </div>
+      <div class="field"><label>Ubicación</label><input type="text" id="ap_rast_ub" placeholder="Ubicación..."></div>
+      <div class="tipo-btns">
+        <button class="tipo-btn" onclick="toggleTipo(this)">Gel</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Gas</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Manual</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Espolvoreo</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">ULV</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Aspersión</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Moto</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Producto</label><input type="text" id="ap_rast_prod" placeholder="Nombre..."></div>
+        <div class="field"><label>Dosis</label><input type="text" id="ap_rast_dosis" placeholder="Dosis..."></div>
+      </div>
+    </div>
+    <div class="aplic-block">
+      <div class="aplic-title">🦟 Rastreros + Voladores</div>
+      <div class="tipo-btns">
+        <button class="tipo-btn" onclick="toggleTipo(this)">Preventivo</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Desvío</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Adicional</button>
+      </div>
+      <div class="field"><label>Ubicación</label><input type="text" id="ap_vol_ub" placeholder="Ubicación..."></div>
+      <div class="tipo-btns">
+        <button class="tipo-btn" onclick="toggleTipo(this)">Gel</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Gas</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Manual</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Espolvoreo</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">ULV</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Aspersión</button>
+        <button class="tipo-btn" onclick="toggleTipo(this)">Moto</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Producto</label><input type="text" id="ap_vol_prod" placeholder="Nombre..."></div>
+        <div class="field"><label>Dosis</label><input type="text" id="ap_vol_dosis" placeholder="Dosis..."></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:0 0 12px">
+    <button class="btn-primary" onclick="switchScreen('send'); buildPreview()">📤 Ver resumen y enviar</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: ENVIAR
+══════════════════════════════════ -->
+<div id="screen-send" class="screen">
+  <div class="card">
+    <div class="card-title">Vista previa WhatsApp</div>
+    <div class="wa-preview" id="waPreview">Completá la planilla para generar el resumen...</div>
+    <button class="btn-wa" onclick="sendWhatsApp()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      Enviar por WhatsApp
+    </button>
+    <button class="btn-secondary" onclick="buildPreview()">🔄 Actualizar</button>
+  </div>
+  <div class="card" style="background:var(--brand-light);border:1.5px solid var(--brand)">
+    <p style="font-size:0.85rem;color:var(--brand);font-weight:600;text-align:center;">📲 El mensaje se enviará directo al WhatsApp de la empresa</p>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-bar">
+  <button class="bottom-btn active" id="bnTimer" onclick="switchScreen('timer')"><span class="bottom-icon">⏱</span>Tiempo</button>
+  <button class="bottom-btn" id="bnForm" onclick="switchScreen('form')"><span class="bottom-icon">📋</span>Planilla</button>
+  <button class="bottom-btn" id="bnSend" onclick="switchScreen('send'); buildPreview()"><span class="bottom-icon">📤</span>Enviar</button>
+</div>
+
+<!-- ══════════════════════════════════
+     MODAL: FICHA DE CIERRE DE SERVICIO
+══════════════════════════════════ -->
+<div class="modal-overlay" id="cierreModal">
+  <div class="modal-sheet">
+
+    <div class="modal-header">
+      <div class="modal-header-top">
+        <div>
+          <div class="modal-title">✅ Ficha de Cierre</div>
+          <div class="modal-subtitle">Completá los datos finales del servicio</div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-summary-row">
+        <div class="modal-badge">🏢 <strong id="mc_cliente">—</strong></div>
+        <div class="modal-badge">⏱ <strong id="mc_duracion">—</strong></div>
+        <div class="modal-badge">📅 <strong id="mc_fecha">—</strong></div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- FORMA DE PAGO -->
+      <div class="field">
+        <label>Forma de Pago</label>
+        <div class="pago-btns" id="pagoBtns">
+          <button class="pago-btn" onclick="selPago(this)">💵 Efectivo</button>
+          <button class="pago-btn" onclick="selPago(this)">💳 Transferencia</button>
+          <button class="pago-btn" onclick="selPago(this)">🔖 Cuenta cte.</button>
+          <button class="pago-btn" onclick="selPago(this)">📱 Débito</button>
+          <button class="pago-btn" onclick="selPago(this)">💰 Crédito</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Monto cobrado ($)</label>
+        <input type="number" id="monto_cobrado" placeholder="Ej: 15000" style="font-size:1.1rem;font-weight:600;">
+      </div>
+
+      <!-- DESCRIPCION -->
+      <div class="field">
+        <label>Descripción del servicio realizado</label>
+        <textarea id="descripcion_servicio" placeholder="Describí brevemente el trabajo realizado, áreas tratadas, condiciones encontradas..."></textarea>
+      </div>
+
+      <!-- SUGERENCIAS -->
+      <div class="field">
+        <label>Sugerencias para el cliente</label>
+        <textarea id="sugerencias_cliente" placeholder="Indicaciones post-servicio, cuidados, recomendaciones específicas..."></textarea>
+      </div>
+
+      <!-- QUÍMICOS UTILIZADOS -->
+      <div class="field">
+        <label>Químicos Utilizados</label>
+        <table class="quimicos-table">
+          <thead>
+            <tr>
+              <th style="width:50%">Producto</th>
+              <th style="width:25%">Cantidad</th>
+              <th style="width:25%">Unidad</th>
+            </tr>
+          </thead>
+          <tbody id="quimicosBody">
+            <!-- 5 filas generadas por JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- COMPLETADO BANNER -->
+      <div class="completado-banner" id="completadoBanner">
+        ✅ Ficha completa — podés enviar por WhatsApp
+      </div>
+
+      <!-- BOTÓN ENVIAR WA -->
+      <button class="btn-wa" id="btnEnviarCierre" onclick="enviarCierre()" style="margin-top:4px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar Ficha a la Empresa
+      </button>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PRODUCTOS QUIMICOS ──
+const QUIMICOS = [
+  '— Seleccionar —','Fipronil','Starycide','Deltametrina','Demoledor',
+  'Cipermetrina','Troya','Formix','Ultra Block','Placa de pegamento',
+  'DEPE','Fipronil Gel','Apollo','Otros'
+];
+
+const UNIDADES = ['— —','cc','gr','ml','lt','kg','unid.'];
+
+// ── INIT ──
+let estadoInt = '', estadoExt = '', pagoSel = '';
+const today = new Date();
+document.getElementById('headerDate').textContent =
+  today.toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long' });
+const todayStr = today.toISOString().split('T')[0];
+const nowHour = today.toTimeString().slice(0,5);
+document.getElementById('t_fecha').value = todayStr;
+document.getElementById('f_fecha').value = todayStr;
+document.getElementById('f_hora').value = nowHour;
+
+// Generar filas de químicos
+(function buildQuimicosTable() {
+  const tbody = document.getElementById('quimicosBody');
+  for (let i = 0; i < 5; i++) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <select id="q_prod_${i}" onchange="checkCierreReady()">
+          ${QUIMICOS.map(q => `<option value="${q === '— Seleccionar —' ? '' : q}">${q}</option>`).join('')}
+        </select>
+      </td>
+      <td><input type="number" id="q_cant_${i}" min="0" step="0.1" placeholder="0" oninput="checkCierreReady()"></td>
+      <td>
+        <select id="q_unit_${i}">
+          ${UNIDADES.map(u => `<option value="${u === '— —' ? '' : u}">${u}</option>`).join('')}
+        </select>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+})();
+
+// ── NAVIGATION ──
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bottom-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  const map = { timer:'bnTimer', form:'bnForm', send:'bnSend' };
+  document.getElementById(map[name]).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['timer','form','send'][i] === name);
+  });
+}
+
+// ── TIMER ──
+let timerRunning = false, timerStart = null, timerInterval = null, timerElapsed = 0;
+let serviceHistory = [], lastDuration = 0;
+
+function toggleTimer() {
+  if (!timerRunning) {
+    // INICIAR
+    timerRunning = true;
+    timerStart = Date.now() - timerElapsed;
+    timerInterval = setInterval(updateTimer, 1000);
+    document.getElementById('timerBtn').className = 'timer-btn timer-btn-stop';
+    document.getElementById('timerBtn').innerHTML = '⏹ FINALIZAR SERVICIO';
+    document.getElementById('timerStatus').textContent = '⏳ Servicio en curso...';
+    document.getElementById('f_hora').value = new Date().toTimeString().slice(0,5);
+  } else {
+    // FINALIZAR → abrir modal
+    timerRunning = false;
+    clearInterval(timerInterval);
+    lastDuration = timerElapsed;
+
+    const cliente = document.getElementById('t_cliente').value || 'Sin cliente';
+    serviceHistory.unshift({
+      cliente,
+      duration: lastDuration,
+      time: new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'})
+    });
+    renderHistory();
+
+    timerElapsed = 0;
+    timerStart = null;
+    document.getElementById('timerDisplay').textContent = '00:00:00';
+    document.getElementById('timerBtn').className = 'timer-btn timer-btn-start';
+    document.getElementById('timerBtn').innerHTML = '▶ INICIAR SERVICIO';
+    document.getElementById('timerStatus').textContent = '✅ Servicio finalizado · ' + formatTime(lastDuration);
+
+    openCierreModal(cliente, lastDuration);
+  }
+}
+
+function updateTimer() {
+  timerElapsed = Date.now() - timerStart;
+  document.getElementById('timerDisplay').textContent = formatTime(timerElapsed);
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms/1000);
+  const h = Math.floor(s/3600).toString().padStart(2,'0');
+  const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
+  const sec = (s%60).toString().padStart(2,'0');
+  return `${h}:${m}:${sec}`;
+}
+
+function renderHistory() {
+  const card = document.getElementById('historyCard');
+  const list = document.getElementById('historyList');
+  if (!serviceHistory.length) { card.style.display='none'; return; }
+  card.style.display='block';
+  list.innerHTML = serviceHistory.map(s => `
+    <div class="history-item">
+      <div>
+        <div style="font-weight:600">${s.cliente}</div>
+        <div class="history-meta">${s.time}</div>
+      </div>
+      <div class="history-duration">${formatTime(s.duration)}</div>
+    </div>
+  `).join('');
+}
+
+// ── MODAL CIERRE ──
+function openCierreModal(cliente, duration) {
+  document.getElementById('mc_cliente').textContent = cliente;
+  document.getElementById('mc_duracion').textContent = formatTime(duration);
+  document.getElementById('mc_fecha').textContent =
+    new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  document.getElementById('cierreModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  checkCierreReady();
+}
+
+function closeModal() {
+  document.getElementById('cierreModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Cierra al tocar el overlay
+document.getElementById('cierreModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── PAGO ──
+function selPago(btn) {
+  document.querySelectorAll('#pagoBtns .pago-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  pagoSel = btn.textContent.trim().replace(/^.+\s/,'');
+  checkCierreReady();
+}
+
+// ── VALIDAR FORM CIERRE ──
+function checkCierreReady() {
+  const desc = document.getElementById('descripcion_servicio').value.trim();
+  const pago = document.querySelector('#pagoBtns .pago-btn.sel');
+  const hasQuimico = Array.from({length:5}, (_,i) =>
+    document.getElementById(`q_prod_${i}`)?.value
+  ).some(v => v && v !== '');
+
+  const ready = desc.length > 3 && pago && hasQuimico;
+  document.getElementById('completadoBanner').classList.toggle('show', ready);
+}
+
+document.getElementById('descripcion_servicio').addEventListener('input', checkCierreReady);
+document.getElementById('sugerencias_cliente').addEventListener('input', checkCierreReady);
+
+// ── ENVIAR CIERRE POR WA ──
+function enviarCierre() {
+  const cliente = document.getElementById('mc_cliente').textContent;
+  const duracion = document.getElementById('mc_duracion').textContent;
+  const fecha = document.getElementById('mc_fecha').textContent;
+  const pagoBtnEl = document.querySelector('#pagoBtns .pago-btn.sel');
+  const pago = pagoBtnEl ? pagoBtnEl.textContent.trim() : 'No especificado';
+  const monto = document.getElementById('monto_cobrado').value;
+  const desc = document.getElementById('descripcion_servicio').value || '—';
+  const suger = document.getElementById('sugerencias_cliente').value || '—';
+  const tecnico = document.getElementById('t_tecnico').value || '—';
+
+  // Armar tabla químicos
+  let quimicosLineas = '';
+  for (let i = 0; i < 5; i++) {
+    const prod = document.getElementById(`q_prod_${i}`)?.value;
+    const cant = document.getElementById(`q_cant_${i}`)?.value;
+    const unit = document.getElementById(`q_unit_${i}`)?.value;
+    if (prod) {
+      quimicosLineas += `  • ${prod}${cant ? ': ' + cant + ' ' + (unit||'') : ''}\n`;
+    }
+  }
+  if (!quimicosLineas) quimicosLineas = '  Sin registros\n';
+
+  const msg =
+`🦟 *EXPERTS SERVICIOS AMBIENTALES*
+📋 *FICHA DE CIERRE DE SERVICIO*
+
+━━━━━━━━━━━━━━━━━━
+🏢 *Cliente:* ${cliente}
+👷 *Técnico:* ${tecnico}
+📅 *Fecha:* ${fecha}
+⏱ *Duración del servicio:* ${duracion}
+━━━━━━━━━━━━━━━━━━
+
+💳 *Forma de pago:* ${pago}
+${monto ? '💰 *Monto cobrado:* $' + monto : ''}
+
+📝 *Descripción del servicio:*
+${desc}
+
+💡 *Sugerencias al cliente:*
+${suger}
+
+🧪 *Químicos utilizados:*
+${quimicosLineas}━━━━━━━━━━━━━━━━━━
+_Experts Servicios Ambientales_
+_Enviado desde la App del Técnico_`;
+
+  const waUrl = `https://wa.me/5491155026228?text=${encodeURIComponent(msg)}`;
+
+  // Abrir WhatsApp
+  window.open(waUrl, '_blank');
+
+  // Cerrar modal y resetear TODO
+  setTimeout(() => {
+    closeModal();
+    resetAll();
+  }, 600);
+}
+
+// ── RESET COMPLETO ──
+function resetAll() {
+  // Timer screen
+  document.getElementById('t_cliente').value = '';
+  document.getElementById('t_tecnico').value = '';
+  const newDate = new Date().toISOString().split('T')[0];
+  document.getElementById('t_fecha').value = newDate;
+
+  // Planilla - datos generales
+  document.getElementById('f_cliente').value = '';
+  document.getElementById('f_direccion').value = '';
+  document.getElementById('f_fecha').value = newDate;
+  document.getElementById('f_hora').value = new Date().toTimeString().slice(0,5);
+
+  // Monitoreo artrópodos - todos los selects a vacío
+  ['iv','ir','ia','ev','er','ea'].forEach(pre => {
+    ['nula','baja','media','alta'].forEach(col => {
+      const el = document.getElementById(`${pre}_${col}`);
+      if (el) el.value = '';
+    });
+  });
+
+  // Trampa de luz
+  document.querySelectorAll('#trampaBody select').forEach(s => s.value = '');
+
+  // Estado sanitario
+  estadoInt = ''; estadoExt = '';
+  document.querySelectorAll('#estadoInt .estado-btn, #estadoExt .estado-btn')
+    .forEach(b => b.classList.remove('selected'));
+
+  // Observaciones
+  document.querySelectorAll('#obsGrid .obs-item').forEach(el => {
+    el.classList.remove('checked');
+    el.querySelector('.obs-check').textContent = '';
+  });
+  document.getElementById('obs_otras').value = '';
+
+  // Roedores
+  document.querySelectorAll('.roedores-table .sn-btn')
+    .forEach(b => b.classList.remove('si-sel','no-sel'));
+  document.querySelectorAll('.roedores-table input[type=text]')
+    .forEach(i => i.value = '');
+
+  // Recomendaciones
+  document.querySelectorAll('#recomGrid .recom-item').forEach(el => {
+    el.classList.remove('checked');
+    el.querySelector('.recom-check').textContent = '';
+  });
+  document.getElementById('recom_otras').value = '';
+
+  // Aplicaciones
+  ['ap_rod_ub','ap_rod_prod','ap_rod_dosis',
+   'ap_rast_ub','ap_rast_prod','ap_rast_dosis',
+   'ap_vol_ub','ap_vol_prod','ap_vol_dosis'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.querySelectorAll('.tipo-btn').forEach(b => b.classList.remove('sel'));
+
+  // Modal cierre
+  document.querySelector('#pagoBtns .pago-btn.sel')?.classList.remove('sel');
+  pagoSel = '';
+  document.getElementById('monto_cobrado').value = '';
+  document.getElementById('descripcion_servicio').value = '';
+  document.getElementById('sugerencias_cliente').value = '';
+  for (let i = 0; i < 5; i++) {
+    const p = document.getElementById(`q_prod_${i}`);
+    const c = document.getElementById(`q_cant_${i}`);
+    const u = document.getElementById(`q_unit_${i}`);
+    if (p) p.value = '';
+    if (c) c.value = '';
+    if (u) u.value = '';
+  }
+  document.getElementById('completadoBanner').classList.remove('show');
+
+  // WA preview
+  buildPreview();
+
+  // Volver a pantalla timer
+  switchScreen('timer');
+}
+
+// ── HELPERS ──
+function syncField(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
+}
+function selEstado(btn, tipo) {
+  const cont = document.getElementById(tipo === 'int' ? 'estadoInt' : 'estadoExt');
+  cont.querySelectorAll('.estado-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  if (tipo === 'int') estadoInt = btn.dataset.val;
+  else estadoExt = btn.dataset.val;
+}
+function toggleObs(el) {
+  el.classList.toggle('checked');
+  el.querySelector('.obs-check').textContent = el.classList.contains('checked') ? '✓' : '';
+}
+function toggleRecom(el) {
+  el.classList.toggle('checked');
+  el.querySelector('.recom-check').textContent = el.classList.contains('checked') ? '✓' : '';
+}
+function toggleTipo(btn) { btn.classList.toggle('sel'); }
+function selSN(btn, val) {
+  btn.closest('.si-no').querySelectorAll('.sn-btn').forEach(b => b.classList.remove('si-sel','no-sel'));
+  btn.classList.add(val === 'si' ? 'si-sel' : 'no-sel');
+}
+
+// ── BUILD WA PREVIEW (pantalla Enviar) ──
+function buildPreview() {
+  const getV = id => document.getElementById(id)?.value || '—';
+  const chk = id => document.getElementById(id)?.value === '✓' ? '✓' : '·';
+  const cliente = getV('f_cliente');
+  const dir = getV('f_direccion');
+  const fecha = getV('f_fecha');
+  const hora = getV('f_hora');
+  const obsChecked = [...document.querySelectorAll('#obsGrid .obs-item.checked')].map(e => e.textContent.trim()).join(', ') || 'Ninguna';
+  const recomChecked = [...document.querySelectorAll('#recomGrid .recom-item.checked')].map(e => e.textContent.trim()).join(', ') || 'Ninguna';
+  const roedoresRows = [...document.querySelectorAll('.roedores-table tbody tr')];
+  const indicios = ['Orina','Excretas','Elementos roídos','Roedor muerto','Roedor vivo','Madriguera'];
+  let roedoresTxt = '';
+  roedoresRows.forEach((row,i) => {
+    const si = row.querySelector('.si-sel');
+    const no = row.querySelector('.no-sel');
+    const ub = row.querySelector('input[type=text]')?.value || '';
+    if (si||no) roedoresTxt += `  • ${indicios[i]}: ${si?'SÍ':'NO'}${ub?' · '+ub:''}\n`;
+  });
+  const dur = serviceHistory.length>0 ? formatTime(serviceHistory[0].duration) : (timerRunning ? formatTime(timerElapsed) : 'No registrada');
+
+  document.getElementById('waPreview').textContent =
+`🦟 *EXPERTS SERVICIOS AMBIENTALES*
+📋 Planilla de Registro de Servicio
+
+━━━━━━━━━━━━━━━━━━
+🏢 *${cliente}*
+📍 ${dir}
+📅 ${fecha} · 🕐 ${hora}
+━━━━━━━━━━━━━━━━━━
+
+*1. MONITOREO DE ARTRÓPODOS*
+
+Interior:
+  Voladores — Nula:${chk('iv_nula')} Baja:${chk('iv_baja')} Media:${chk('iv_media')} Alta:${chk('iv_alta')}
+  Rastreros — Nula:${chk('ir_nula')} Baja:${chk('ir_baja')} Media:${chk('ir_media')} Alta:${chk('ir_alta')}
+  Arácnidos — Nula:${chk('ia_nula')} Baja:${chk('ia_baja')} Media:${chk('ia_media')} Alta:${chk('ia_alta')}
+
+Exterior:
+  Voladores — Nula:${chk('ev_nula')} Baja:${chk('ev_baja')} Media:${chk('ev_media')} Alta:${chk('ev_alta')}
+  Rastreros — Nula:${chk('er_nula')} Baja:${chk('er_baja')} Media:${chk('er_media')} Alta:${chk('er_alta')}
+  Arácnidos — Nula:${chk('ea_nula')} Baja:${chk('ea_baja')} Media:${chk('ea_media')} Alta:${chk('ea_alta')}
+
+Estado sanitario interior: ${estadoInt.toUpperCase()||'—'}
+Estado sanitario exterior: ${estadoExt.toUpperCase()||'—'}
+Observaciones: ${obsChecked}
+${getV('obs_otras')!=='—'?'Otras: '+getV('obs_otras'):''}
+
+*2. MONITOREO DE ROEDORES*
+${roedoresTxt||'  Sin indicios registrados'}
+
+*3. RECOMENDACIONES*
+${recomChecked}
+${getV('recom_otras')!=='—'?'Otras: '+getV('recom_otras'):''}
+
+*4. APLICACIONES*
+  Roedores: ${getV('ap_rod_prod')} · ${getV('ap_rod_dosis')} — ${getV('ap_rod_ub')}
+  Rastreros/Desinfec.: ${getV('ap_rast_prod')} · ${getV('ap_rast_dosis')} — ${getV('ap_rast_ub')}
+  Rastreros/Voladores: ${getV('ap_vol_prod')} · ${getV('ap_vol_dosis')} — ${getV('ap_vol_ub')}
+
+━━━━━━━━━━━━━━━━━━
+⏱ Duración: *${dur}*
+━━━━━━━━━━━━━━━━━━
+_Experts Servicios Ambientales_`;
+}
+
+function sendWhatsApp() {
+  buildPreview();
+  const msg = document.getElementById('waPreview').textContent;
+  window.open(`https://wa.me/5491155026228?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+document.querySelectorAll('.nav-tab').forEach((tab,i) => {
+  const names = ['timer','form','send'];
+  tab.onclick = () => { switchScreen(names[i]); if(names[i]==='send') buildPreview(); };
+});
+
+buildPreview();
+</script>
+</body>
+</html>
