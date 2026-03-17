@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXPERTS · Panel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const app = initializeApp({ databaseURL: "https://experts-app-7483c-default-rtdb.firebaseio.com/" });
+  const db  = getDatabase(app);
+
+  onValue(ref(db, 'tecnicos'), snap => {
+    const data = snap.val() || {};
+    window.renderTecnicos(data);
+  });
+
+  onValue(ref(db, 'servicios'), snap => {
+    const data = snap.val() || {};
+    window.renderServicios(data);
+  });
+</script>
+<style>
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #22263a;
+  --brand: #1a6b2f;
+  --brand-light: #e8f5ec;
+  --accent: #f5a623;
+  --danger: #e03131;
+  --green: #22c55e;
+  --text: #f0f2f5;
+  --muted: #8b92a5;
+  --border: #2e3347;
+  --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Barlow', sans-serif; min-height: 100vh; }
+
+/* HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.logo-row { display: flex; align-items: center; gap: 14px; }
+.logo-box { background: #1a6b2f; color: white; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; padding: 6px 10px; letter-spacing: 1px; line-height: 1; }
+.logo-box span { font-size: 0.6rem; display: block; letter-spacing: 2px; opacity: 0.7; }
+.header-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 700; }
+.header-sub { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+.live-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  border-radius: 20px; padding: 6px 14px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.82rem; font-weight: 700; color: var(--green);
+}
+.live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.5; transform:scale(1.3); } }
+
+/* STATS */
+.stats-bar {
+  display: flex; gap: 12px; padding: 16px 24px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.stats-bar::-webkit-scrollbar { display: none; }
+.stat { background: var(--surface2); border-radius: 10px; padding: 12px 20px; text-align: center; min-width: 100px; border: 1px solid var(--border); }
+.stat-num { font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 800; line-height: 1; }
+.stat-label { font-size: 0.7rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat.active .stat-num { color: var(--danger); }
+.stat.libre .stat-num  { color: var(--green); }
+.stat.total .stat-num  { color: var(--accent); }
+
+/* MAIN CONTENT */
+.main { padding: 20px 24px; }
+.section-title {
+  font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 2px; color: var(--muted);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* TECNICO CARDS */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+
+.tecnico-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+}
+.tecnico-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+.tecnico-card.en-servicio { border-color: rgba(224,49,49,0.5); box-shadow: 0 0 0 1px rgba(224,49,49,0.2); }
+.tecnico-card.libre { border-color: rgba(34,197,94,0.3); }
+
+/* TOP CARD */
+.card-top {
+  padding: 18px 20px 14px;
+  display: flex; align-items: center; gap: 14px;
+  position: relative;
+}
+.avatar {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: linear-gradient(135deg, #1a6b2f, #2ea04d);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 800;
+  color: white; flex-shrink: 0; position: relative;
+}
+.avatar-ring {
+  position: absolute; inset: -3px; border-radius: 50%;
+  border: 2.5px solid transparent;
+}
+.en-servicio .avatar-ring { border-color: var(--danger); animation: ringPulse 1.5s infinite; }
+.libre .avatar-ring { border-color: var(--green); }
+@keyframes ringPulse {
+  0%,100%{ opacity:1; box-shadow: 0 0 0 0 rgba(224,49,49,0.4); }
+  50%{ opacity:0.8; box-shadow: 0 0 0 6px rgba(224,49,49,0); }
+}
+
+.tecnico-info { flex: 1; }
+.tecnico-nombre { font-family: 'Barlow Condensed', sans-serif; font-size: 1.15rem; font-weight: 800; }
+.tecnico-estado { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 0.78rem; font-weight: 700; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 20px; }
+.estado-activo { background: rgba(224,49,49,0.15); color: #f87171; }
+.estado-libre  { background: rgba(34,197,94,0.12); color: var(--green); }
+.estado-dot    { width: 7px; height: 7px; border-radius: 50%; }
+.activo-dot    { background: #f87171; animation: pulse 1.2s infinite; }
+.libre-dot     { background: var(--green); }
+
+/* CARD BODY */
+.card-body { padding: 0 20px 16px; }
+.card-info-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--surface2);
+  border-radius: 8px; margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+.card-info-row .icon { font-size: 1rem; flex-shrink: 0; }
+.card-info-row .label { color: var(--muted); font-size: 0.75rem; }
+.card-info-row .value { font-weight: 600; }
+
+/* CRONOMETRO EN VIVO */
+.crono-box {
+  background: rgba(224,49,49,0.08);
+  border: 1px solid rgba(224,49,49,0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.crono-label { font-size: 0.72rem; color: #f87171; text-transform: uppercase; letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; }
+.crono-time { font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 800; color: #f87171; letter-spacing: 2px; }
+
+/* ULTIMO SERVICIO */
+.ultimo-box {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 10px; padding: 10px 14px;
+}
+.ultimo-label { font-size: 0.72rem; color: var(--green); text-transform: uppercase; letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; margin-bottom: 3px; }
+.ultimo-val { font-size: 0.88rem; font-weight: 600; }
+.ultimo-dur { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+.empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; color: var(--text); opacity: 0.6; }
+.empty-sub { font-size: 0.82rem; margin-top: 6px; line-height: 1.5; }
+
+/* HORA */
+.hora-actual { font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; color: var(--muted); }
+
+/* TABS */
+.panel-tab { padding: 14px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted); font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; letter-spacing: 0.5px; cursor: pointer; white-space: nowrap; transition: all .2s; }
+.panel-tab:hover { color: var(--text); }
+.panel-tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* CALENDARIO */
+.semana-header { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 8px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; margin-top: 16px; }
+.semana-header:first-child { margin-top: 0; }
+.cal-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; border: 1px solid var(--border); background: var(--surface); }
+.cal-item.abono { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+.cal-item.no-abono { border-color: rgba(204,26,26,0.4); background: rgba(204,26,26,0.06); }
+.cal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cal-dot.verde { background: #22c55e; }
+.cal-dot.rojo  { background: var(--danger); }
+.cal-fecha { font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--muted); width: 32px; flex-shrink: 0; }
+.cal-cliente { font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; flex: 1; }
+.cal-tecnico { font-size: 0.75rem; color: var(--muted); }
+.cal-cobro { font-size: 0.75rem; font-weight: 700; }
+.cal-cobro.verde { color: #22c55e; }
+.cal-cobro.rojo  { color: var(--danger); }
+.cal-monto { font-family: 'Barlow Condensed', sans-serif; font-size: 0.88rem; font-weight: 700; color: #22c55e; }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .stats-bar { padding: 12px 16px; }
+  .main { padding: 16px; }
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* SERVICIOS LIST */
+.servicio-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 10px; overflow: hidden; }
+.servicio-head { padding: 14px 16px; display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+.servicio-head:hover { background: var(--surface2); }
+.svc-cliente { font-family: 'Barlow Condensed', sans-serif; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.svc-meta { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+.svc-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.svc-badge { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+.svc-badge.editado { background: rgba(245,166,35,0.15); border-color: rgba(245,166,35,0.4); color: #f5a623; }
+.svc-arrow { font-size: 0.9rem; color: var(--muted); transition: transform .2s; }
+.svc-arrow.open { transform: rotate(180deg); }
+.svc-detail { display: none; padding: 0 16px 14px; border-top: 1px solid var(--border); }
+.svc-detail.open { display: block; }
+.svc-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.svc-detail-item { background: var(--surface2); border-radius: 8px; padding: 8px 10px; }
+.svc-detail-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.svc-detail-val { font-size: 0.88rem; font-weight: 600; margin-top: 2px; }
+.svc-detail-full { grid-column: 1 / -1; }
+.quimico-linea { font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid var(--border); color: var(--text); }
+.quimico-linea:last-child { border-bottom: none; }
+
+/* GRAFICO BARRAS */
+.chart-container { margin-top: 6px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-label { font-family: 'Barlow Condensed', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--text); width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; background: var(--surface2); border-radius: 6px; height: 22px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #1a6b2f, #2ea04d); transition: width .8s cubic-bezier(.2,.8,.4,1); display: flex; align-items: center; padding-left: 8px; min-width: 2px; }
+.bar-fill.red { background: linear-gradient(90deg, #cc1a1a, #e85555); }
+.bar-val { font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem; font-weight: 700; color: white; white-space: nowrap; }
+.bar-total { font-family: 'Barlow Condensed', sans-serif; font-size: 0.78rem; color: var(--muted); flex-shrink: 0; width: 60px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-row">
+    <div class="logo-box">EX<span>PERTS</span></div>
+    <div>
+      <div class="header-title">Panel de Control</div>
+      <div class="header-sub">Administración · Tiempo real</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="hora-actual" id="horaActual"></div>
+    <div class="live-badge"><div class="live-dot"></div>EN VIVO</div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat total">
+    <div class="stat-num" id="statTotal">0</div>
+    <div class="stat-label">Técnicos</div>
+  </div>
+  <div class="stat active">
+    <div class="stat-num" id="statActivos">0</div>
+    <div class="stat-label">En servicio</div>
+  </div>
+  <div class="stat libre">
+    <div class="stat-num" id="statLibres">0</div>
+    <div class="stat-label">Disponibles</div>
+  </div>
+  <div class="stat" style="">
+    <div class="stat-num" id="statHoy" style="color:var(--accent)">0</div>
+    <div class="stat-label">Servicios hoy</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;">
+  <button class="panel-tab active" id="tab-tecnicos" onclick="switchTab('tecnicos')">🟢 Técnicos</button>
+  <button class="panel-tab" id="tab-calendario" onclick="switchTab('calendario')">📅 Calendario</button>
+  <button class="panel-tab" id="tab-consumo" onclick="switchTab('consumo')">🧪 Consumo</button>
+</div>
+
+<div class="main">
+
+<!-- ══ TAB: TÉCNICOS ══ -->
+<div id="panel-tecnicos" class="panel-section active">
+  <div class="section-title">Estado de técnicos</div>
+  <div class="grid" id="tecnicosGrid">
+    <div class="empty">
+      <div class="empty-icon">📡</div>
+      <div class="empty-title">Esperando conexión...</div>
+      <div class="empty-sub">Los técnicos aparecerán aquí en tiempo real<br>cuando inicien un servicio desde la app</div>
+    </div>
+  </div>
+</div><!-- end panel-tecnicos -->
+
+<!-- ══ TAB: CALENDARIO ══ -->
+<div id="panel-calendario" class="panel-section" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div class="section-title" style="margin:0;">Servicios del mes</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="navMes(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">◀</button>
+      <div id="mesLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text);min-width:140px;text-align:center;"></div>
+      <button onclick="navMes(1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">▶</button>
+    </div>
+  </div>
+  <!-- Leyenda -->
+  <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted);">
+      <div style="width:12px;height:12px;border-radius:3px;background:#22c55e;"></div> Abonó
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted);">
+      <div style="width:12px;height:12px;border-radius:3px;background:var(--danger);"></div> No abonó
+    </div>
+  </div>
+  <div id="calendarioLista"></div>
+</div>
+
+<!-- ══ TAB: CONSUMO ══ -->
+<div id="panel-consumo" class="panel-section" style="display:none;">
+  <div class="section-title">Consumo de Químicos acumulado</div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:24px;">
+    <div id="chartQuimicos">
+      <div class="empty" style="padding:30px 0;"><div class="empty-icon" style="font-size:2rem;">🧪</div><div class="empty-title" style="font-size:0.95rem;">Sin datos de consumo aún</div></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;" id="chartLeyenda"></div>
+  </div>
+  <div class="section-title">Servicios registrados</div>
+  <div id="serviciosList">
+    <div class="empty" style="padding:40px 0;">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Sin servicios registrados</div>
+      <div class="empty-sub">Los servicios aparecerán aquí cuando los técnicos envíen la ficha de cierre</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<script>
+// ── INIT CALENDAR ──
+(function() {
+  const hoy = new Date();
+  calMes = hoy.getMonth();
+  calAnio = hoy.getFullYear();
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const lbl = document.getElementById('mesLabel');
+  if (lbl) lbl.textContent = meses[calMes] + ' ' + calAnio;
+})();
+
+// ── RELOJ ──
+function tickClock() {
+  document.getElementById('horaActual').textContent =
+    new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ── CRONÓMETROS EN VIVO ──
+const cronos = {}; // tecId → intervalId
+
+function startCrono(tecId, inicioISO) {
+  if (cronos[tecId]) clearInterval(cronos[tecId]);
+  cronos[tecId] = setInterval(() => {
+    const el = document.getElementById('crono_' + tecId);
+    if (!el) { clearInterval(cronos[tecId]); return; }
+    const ms = Date.now() - new Date(inicioISO).getTime();
+    el.textContent = formatTime(ms);
+  }, 1000);
+}
+
+function stopCrono(tecId) {
+  if (cronos[tecId]) { clearInterval(cronos[tecId]); delete cronos[tecId]; }
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600).toString().padStart(2,'0');
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2,'0');
+  const sec = (s % 60).toString().padStart(2,'0');
+  return `${h}:${m}:${sec}`;
+}
+
+// ── INICIALES AVATAR ──
+function initiales(nombre) {
+  return nombre.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+}
+
+// ── RENDER TÉCNICOS (llamado por Firebase) ──
+let serviciosHoy = 0;
+window.renderTecnicos = function(data) {
+  const grid = document.getElementById('tecnicosGrid');
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">Esperando conexión...</div><div class="empty-sub">Los técnicos aparecerán aquí en tiempo real<br>cuando inicien un servicio desde la app</div></div>`;
+    updateStats(0, 0, 0);
+    return;
+  }
+
+  let activos = 0, libres = 0;
+  serviciosHoy = 0;
+
+  // Parar cronos viejos
+  Object.keys(cronos).forEach(id => { if (!data[id]) stopCrono(id); });
+
+  grid.innerHTML = keys.map(tecId => {
+    const t = data[tecId];
+    const enServicio = t.estado === 'en_servicio';
+    if (enServicio) activos++; else libres++;
+
+    // Contar servicios de hoy
+    if (!enServicio && t.ultimoServicio) {
+      const ts = new Date(t.timestamp);
+      const hoy = new Date();
+      if (ts.toDateString() === hoy.toDateString()) serviciosHoy++;
+    }
+
+    const ini = enServicio && t.inicio ? new Date(t.inicio) : null;
+    const horaInicio = ini ? ini.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '';
+    const msTranscurrido = ini ? Date.now() - ini.getTime() : 0;
+
+    return `
+    <div class="tecnico-card ${enServicio ? 'en-servicio' : 'libre'}">
+      <div class="card-top">
+        <div class="avatar">
+          <div class="avatar-ring"></div>
+          ${initiales(t.nombre)}
+        </div>
+        <div class="tecnico-info">
+          <div class="tecnico-nombre">${t.nombre}</div>
+          <div class="tecnico-estado ${enServicio ? 'estado-activo' : 'estado-libre'}">
+            <div class="estado-dot ${enServicio ? 'activo-dot' : 'libre-dot'}"></div>
+            ${enServicio ? 'EN SERVICIO' : 'DISPONIBLE'}
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        ${enServicio ? `
+          <div class="crono-box">
+            <div>
+              <div class="crono-label">⏱ Tiempo transcurrido</div>
+              <div class="crono-time" id="crono_${tecId}">${formatTime(msTranscurrido)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:0.72rem;color:var(--muted)">Inicio</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:#f87171">${horaInicio}</div>
+            </div>
+          </div>
+          <div class="card-info-row">
+            <span class="icon">🏢</span>
+            <div>
+              <div class="label">Cliente actual</div>
+              <div class="value">${t.cliente || '—'}</div>
+            </div>
+          </div>
+        ` : `
+          <div class="ultimo-box">
+            <div class="ultimo-label">✅ Último servicio</div>
+            <div class="ultimo-val">${t.ultimoServicio || 'Sin registros aún'}</div>
+            ${t.duracion ? `<div class="ultimo-dur">Duración: ${t.duracion}</div>` : ''}
+          </div>
+        `}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Arrancar cronómetros para los activos
+  keys.forEach(tecId => {
+    const t = data[tecId];
+    if (t.estado === 'en_servicio' && t.inicio) {
+      startCrono(tecId, t.inicio);
+    } else {
+      stopCrono(tecId);
+    }
+  });
+
+  updateStats(keys.length, activos, libres);
+};
+
+function updateStats(total, activos, libres) {
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statActivos').textContent = activos;
+  document.getElementById('statLibres').textContent  = libres;
+  document.getElementById('statHoy').textContent     = serviciosHoy;
+}
+
+// ══════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════
+function switchTab(name) {
+  ['tecnicos','calendario','consumo'].forEach(t => {
+    document.getElementById('panel-' + t).style.display = t === name ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+  });
+  if (name === 'calendario') renderCalendario();
+}
+
+// ══════════════════════════════════════════
+// CALENDARIO — almacena datos globalmente
+// ══════════════════════════════════════════
+let allServicios = [];
+let calMes = new Date().getMonth();
+let calAnio = new Date().getFullYear();
+
+function navMes(dir) {
+  calMes += dir;
+  if (calMes > 11) { calMes = 0; calAnio++; }
+  if (calMes < 0)  { calMes = 11; calAnio--; }
+  renderCalendario();
+}
+
+function renderCalendario() {
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('mesLabel').textContent = meses[calMes] + ' ' + calAnio;
+
+  const lista = document.getElementById('calendarioLista');
+  if (!lista) return;
+
+  // Filtrar servicios del mes seleccionado
+  const delMes = allServicios.filter(s => {
+    if (!s.timestamp) return false;
+    const d = new Date(s.timestamp);
+    return d.getMonth() === calMes && d.getFullYear() === calAnio;
+  }).sort((a, b) => a.timestamp - b.timestamp);
+
+  if (delMes.length === 0) {
+    lista.innerHTML = `<div class="empty" style="padding:40px 0;">
+      <div class="empty-icon">📅</div>
+      <div class="empty-title">Sin servicios en este mes</div>
+    </div>`;
+    return;
+  }
+
+  // Agrupar por semana
+  const semanas = {};
+  delMes.forEach(s => {
+    const d = new Date(s.timestamp);
+    // Calcular número de semana del mes
+    const inicioMes = new Date(d.getFullYear(), d.getMonth(), 1);
+    const semNum = Math.ceil((d.getDate() + inicioMes.getDay()) / 7);
+    const key = 'Semana ' + semNum;
+    if (!semanas[key]) semanas[key] = [];
+    semanas[key].push(s);
+  });
+
+  const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let html = '';
+
+  Object.entries(semanas).forEach(([semana, servicios]) => {
+    html += `<div class="semana-header">${semana}</div>`;
+    servicios.forEach(s => {
+      const d = new Date(s.timestamp);
+      const diaStr = diasSemana[d.getDay()] + ' ' + d.getDate();
+      const abono = s.abono === true;
+      const cobrado = abono ? `✅ Cobró ${s.quienCobro || ''}${s.monto ? ' · $' + Number(s.monto).toLocaleString('es-AR') : ''}` : '❌ No abonó';
+      html += `
+        <div class="cal-item ${abono ? 'abono' : 'no-abono'}">
+          <div class="cal-dot ${abono ? 'verde' : 'rojo'}"></div>
+          <div class="cal-fecha">${diaStr}</div>
+          <div style="flex:1;">
+            <div class="cal-cliente">${s.cliente || '—'}</div>
+            <div class="cal-tecnico">👷 ${s.tecnico || '—'}</div>
+          </div>
+          <div class="cal-cobro ${abono ? 'verde' : 'rojo'}" style="text-align:right;">${cobrado}</div>
+        </div>`;
+    });
+  });
+
+  lista.innerHTML = html;
+}
+
+// ══════════════════════════════════════════
+// RENDER SERVICIOS
+// ══════════════════════════════════════════
+window.renderServicios = function(data) {
+  const lista = document.getElementById('serviciosList');
+  const entries = Object.values(data);
+  // Store globally for calendar
+  allServicios = entries;
+
+  if (entries.length === 0) {
+    lista.innerHTML = `<div class="empty" style="padding:40px 0;">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Sin servicios registrados</div>
+      <div class="empty-sub">Los servicios aparecerán aquí cuando los técnicos envíen la ficha de cierre</div>
+    </div>`;
+    renderChart({});
+    return;
+  }
+
+  // Ordenar más reciente primero
+  entries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  lista.innerHTML = entries.map((s, idx) => {
+    const ts = s.timestamp ? new Date(s.timestamp) : null;
+    const fechaHora = ts ? ts.toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : s.fecha || '—';
+    const quimicosHtml = (s.quimicos || []).map(q => {
+      let txt = q.prod || '';
+      if (q.unit === 'cc' && s.litros > 0 && q.cant) {
+        txt += `: <strong>${(q.cant * s.litros).toFixed(1)} cc total</strong> (${q.cant} cc/L × ${s.litros}L)`;
+      } else if (q.cant) {
+        txt += `: <strong>${q.cant} ${q.unit||''}</strong>`;
+      }
+      return `<div class="quimico-linea">🧪 ${txt}</div>`;
+    }).join('') || '<div class="quimico-linea" style="color:var(--muted)">Sin registros</div>';
+
+    return `
+    <div class="servicio-card">
+      <div class="servicio-head" onclick="toggleSvcDetail(${idx})">
+        <div>
+          <div class="svc-cliente">🏢 ${s.cliente || '—'}</div>
+          <div class="svc-meta">👷 ${s.tecnico || '—'} · 🕐 ${fechaHora} · ⏱ ${s.duracion || '—'}</div>
+          <div class="svc-badges">
+            ${s.abono === true
+              ? `<span class="svc-badge" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#22c55e;">✅ Abonó${s.quienCobro ? ' — ' + s.quienCobro : ''}</span>`
+              : (s.abono === false ? `<span class="svc-badge" style="background:rgba(204,26,26,0.12);border-color:rgba(204,26,26,0.3);color:#f87171;">❌ No abonó</span>` : '')}
+            ${s.pago ? `<span class="svc-badge">💳 ${s.pago}</span>` : ''}
+            ${s.monto ? `<span class="svc-badge">💰 $${Number(s.monto).toLocaleString('es-AR')}</span>` : ''}
+            ${s.litros ? `<span class="svc-badge" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.3);color:#f5a623;">🧴 ${s.litros}L caldo</span>` : ''}
+            ${s.editado ? `<span class="svc-badge editado">✏️ Editado</span>` : ''}
+          </div>
+        </div>
+        <span class="svc-arrow" id="svc-arrow-${idx}">▼</span>
+      </div>
+      <div class="svc-detail" id="svc-detail-${idx}">
+        <div class="svc-detail-grid">
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Descripción del servicio</div>
+            <div class="svc-detail-val">${s.descripcion || '—'}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Sugerencias al cliente</div>
+            <div class="svc-detail-val">${s.sugerencias || '—'}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Químicos utilizados</div>
+            <div style="margin-top:4px;">${quimicosHtml}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Calcular consumo para gráfico
+  const consumo = {};
+  entries.forEach(s => {
+    (s.quimicos || []).forEach(q => {
+      if (!q.prod) return;
+      const key = q.prod;
+      if (!consumo[key]) consumo[key] = { cc: 0, otros: 0, unit: q.unit };
+      const cant = parseFloat(q.cant) || 0;
+      if (q.unit === 'cc' && s.litros > 0) {
+        consumo[key].cc += cant * (parseFloat(s.litros) || 0);
+      } else {
+        consumo[key].otros += cant;
+        consumo[key].unit = q.unit;
+      }
+    });
+  });
+  renderChart(consumo);
+};
+
+function toggleSvcDetail(idx) {
+  const detail = document.getElementById('svc-detail-' + idx);
+  const arrow  = document.getElementById('svc-arrow-' + idx);
+  const open = detail.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+}
+
+// ══════════════════════════════════════════
+// GRÁFICO DE CONSUMO
+// ══════════════════════════════════════════
+function renderChart(consumo) {
+  const container = document.getElementById('chartQuimicos');
+  const leyenda   = document.getElementById('chartLeyenda');
+  const keys = Object.keys(consumo);
+
+  if (keys.length === 0) {
+    container.innerHTML = `<div class="empty" style="padding:30px 0;"><div class="empty-icon" style="font-size:2rem;">🧪</div><div class="empty-title" style="font-size:0.95rem;">Sin datos de consumo aún</div></div>`;
+    leyenda.innerHTML = '';
+    return;
+  }
+
+  // Calcular totales para escala
+  const totales = keys.map(k => {
+    const c = consumo[k];
+    return { key: k, val: c.cc > 0 ? c.cc : c.otros, unit: c.cc > 0 ? 'cc total' : (c.unit || '') };
+  }).sort((a, b) => b.val - a.val);
+
+  const max = totales[0].val;
+
+  container.innerHTML = `<div class="chart-container">
+    ${totales.map((t, i) => {
+      const pct = max > 0 ? Math.max(4, (t.val / max) * 100) : 4;
+      const isRed = ['Fipronil','Demoledor','Cipermetrina','Troya'].includes(t.key);
+      return `<div class="bar-row">
+        <div class="bar-label" title="${t.key}">${t.key}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${isRed ? 'red' : ''}" style="width:${pct}%">
+            <span class="bar-val">${t.val % 1 === 0 ? t.val : t.val.toFixed(1)}</span>
+          </div>
+        </div>
+        <div class="bar-total">${t.unit}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  leyenda.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--muted);">
+      <div style="width:14px;height:10px;border-radius:3px;background:linear-gradient(90deg,#1a6b2f,#2ea04d)"></div> Insecticidas / otros
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--muted);">
+      <div style="width:14px;height:10px;border-radius:3px;background:linear-gradient(90deg,#cc1a1a,#e85555)"></div> Alta toxicidad
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);">📊 Consumo acumulado — todos los servicios</div>`;
+}
+</script>
+</body>
+</html>
