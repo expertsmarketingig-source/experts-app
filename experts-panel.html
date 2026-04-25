@@ -1,0 +1,2764 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXPERTS · Panel Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600;700&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  let _fbDb = null;
+
+  function initFirebaseListeners() {
+    try {
+      const _fbApp = firebase.initializeApp({ databaseURL: "https://experts-app-7483c-default-rtdb.firebaseio.com/" });
+      _fbDb = firebase.database();
+
+      // Escuchar técnicos en tiempo real
+      _fbDb.ref('tecnicos').on('value', snap => {
+        const data = snap.val() || {};
+        console.log('👷 Técnicos update:', Object.keys(data).length, 'registros');
+        if (window.renderTecnicos) window.renderTecnicos(data);
+      }, err => console.error('Error listener técnicos:', err));
+
+      // Escuchar servicios en tiempo real
+      _fbDb.ref('servicios').on('value', snap => {
+        const data = snap.val() || {};
+        console.log('📋 Servicios update:', Object.keys(data).length, 'registros');
+        if (window.renderServicios) window.renderServicios(data);
+      }, err => console.error('Error listener servicios:', err));
+
+      console.log('✅ Firebase panel conectado');
+    } catch(e) {
+      console.error('❌ Error inicializando Firebase:', e);
+    }
+  }
+
+  // Esperar a que el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initFirebaseListeners);
+  } else {
+    // pequeño delay para que las funciones render estén definidas
+    setTimeout(initFirebaseListeners, 100);
+  }
+
+  console.log('Firebase panel listo ✅');
+</script>
+<style>
+:root {
+  --bg: #080c09;
+  --bg2: #0e130f;
+  --surface: #121812;
+  --surface2: #192019;
+  --brand: #1a6b2f;
+  --brand-light: rgba(26,107,47,0.15);
+  --red: #e8000d;
+  --red-glow: rgba(232,0,13,0.2);
+  --accent: #e8000d;
+  --danger: #e8000d;
+  --green: #22c55e;
+  --text: #e8ece8;
+  --text2: #8b9c8b;
+  --muted: #5a6e5a;
+  --border: #1e2a1e;
+  --border2: #162016;
+  --radius: 10px;
+  --font-display: 'Bebas Neue', 'Barlow Condensed', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { 
+  background: var(--bg); 
+  color: var(--text); 
+  font-family: var(--font-body); 
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 0% 0%, rgba(232,0,13,0.03) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(26,107,47,0.04) 0%, transparent 40%);
+}
+
+/* HEADER */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.logo-row { display: flex; align-items: center; gap: 14px; }
+.logo-box { background: #1a6b2f; color: white; font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 1.1rem; padding: 6px 10px; letter-spacing: 1px; line-height: 1; }
+.logo-box span { font-size: 0.6rem; display: block; letter-spacing: 2px; opacity: 0.7; }
+.header-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.2rem; font-weight: 700; }
+.header-sub { font-size: 0.75rem; color: var(--muted); margin-top: 1px; }
+
+.live-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(232,0,13,0.08);
+  border: 1px solid rgba(232,0,13,0.3);
+  border-radius: 4px; padding: 5px 12px;
+  font-family: var(--font-display);
+  font-size: 0.85rem; letter-spacing: 2px; color: var(--red);
+  clip-path: polygon(4px 0%, 100% 0%, calc(100% - 4px) 100%, 0% 100%);
+}
+.live-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:0.5; transform:scale(1.3); } }
+
+/* STATS */
+.stats-bar {
+  display: flex; gap: 10px; padding: 12px 24px;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  overflow-x: auto; scrollbar-width: none;
+}
+.stats-bar::-webkit-scrollbar { display: none; }
+.stat { 
+  background: var(--surface); 
+  border-radius: var(--radius); 
+  padding: 12px 20px; 
+  text-align: center; 
+  min-width: 100px; 
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+.stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--border2); }
+.stat-num { font-family: var(--font-display); font-size: 2rem; letter-spacing: 1px; line-height: 1; }
+.stat-label { font-family: var(--font-display); font-size: 0.65rem; color: var(--muted); margin-top: 4px; letter-spacing: 2px; text-transform: uppercase; }
+.stat.active .stat-num { color: var(--danger); text-shadow: 0 0 16px var(--red-glow); }
+.stat.active::before { background: var(--red); }
+.stat.libre .stat-num  { color: var(--green); }
+.stat.libre::before { background: var(--green); }
+.stat.total .stat-num  { color: var(--text); }
+
+/* MAIN CONTENT */
+.main { padding: 16px 20px; }
+.section-title {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  text-transform: uppercase; letter-spacing: 3px; color: var(--muted);
+  margin-bottom: 12px; display: flex; align-items: center; gap: 10px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* TECNICO CARDS */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 24px; }
+
+.tecnico-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform .2s, box-shadow .2s;
+  position: relative;
+}
+.tecnico-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: var(--border); transition: background .3s; }
+.tecnico-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.5); }
+.tecnico-card.en-servicio { border-color: rgba(232,0,13,0.4); }
+.tecnico-card.en-servicio::before { background: var(--red); box-shadow: 0 0 8px var(--red-glow); }
+.tecnico-card.libre { border-color: rgba(34,197,94,0.25); }
+.tecnico-card.libre::before { background: var(--green); }
+
+/* TOP CARD */
+.card-top {
+  padding: 18px 20px 14px;
+  display: flex; align-items: center; gap: 14px;
+  position: relative;
+}
+.avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, #0f3318, #1a6b2f);
+  border: 2px solid rgba(26,107,47,0.4);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 1.3rem; letter-spacing: 1px;
+  color: white; flex-shrink: 0; position: relative;
+}
+.avatar-ring {
+  position: absolute; inset: -3px; border-radius: 50%;
+  border: 2.5px solid transparent;
+}
+.en-servicio .avatar-ring { border-color: var(--danger); animation: ringPulse 1.5s infinite; }
+.libre .avatar-ring { border-color: var(--green); }
+@keyframes ringPulse {
+  0%,100%{ opacity:1; box-shadow: 0 0 0 0 rgba(224,49,49,0.4); }
+  50%{ opacity:0.8; box-shadow: 0 0 0 6px rgba(224,49,49,0); }
+}
+
+.tecnico-info { flex: 1; }
+.tecnico-nombre { font-family: var(--font-display); font-size: 1.2rem; letter-spacing: 1px; color: var(--text); }
+.tecnico-estado { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-family: var(--font-display); font-size: 0.75rem; letter-spacing: 1.5px; padding: 3px 10px; border-radius: 4px; }
+.estado-activo { background: rgba(224,49,49,0.15); color: #f87171; }
+.estado-libre  { background: rgba(34,197,94,0.12); color: var(--green); }
+.estado-dot    { width: 7px; height: 7px; border-radius: 50%; }
+.activo-dot    { background: #f87171; animation: pulse 1.2s infinite; }
+.libre-dot     { background: var(--green); }
+
+/* CARD BODY */
+.card-body { padding: 0 20px 16px; }
+.card-info-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--surface2);
+  border-radius: 8px; margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+.card-info-row .icon { font-size: 1rem; flex-shrink: 0; }
+.card-info-row .label { color: var(--muted); font-size: 0.75rem; }
+.card-info-row .value { font-weight: 600; }
+
+/* CRONOMETRO EN VIVO */
+.crono-box {
+  background: rgba(224,49,49,0.08);
+  border: 1px solid rgba(224,49,49,0.2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.crono-label { font-size: 0.72rem; color: #f87171; text-transform: uppercase; letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; }
+.crono-time { font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 800; color: #f87171; letter-spacing: 2px; }
+
+/* ULTIMO SERVICIO */
+.ultimo-box {
+  background: rgba(34,197,94,0.06);
+  border: 1px solid rgba(34,197,94,0.15);
+  border-radius: 10px; padding: 10px 14px;
+}
+.ultimo-label { font-size: 0.72rem; color: var(--green); text-transform: uppercase; letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; margin-bottom: 3px; }
+.ultimo-val { font-size: 0.88rem; font-weight: 600; }
+.ultimo-dur { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 60px 20px; color: var(--muted); }
+.empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+.empty-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.1rem; color: var(--text); opacity: 0.6; }
+.empty-sub { font-size: 0.82rem; margin-top: 6px; line-height: 1.5; }
+
+/* HORA */
+.hora-actual { font-family: 'Barlow Condensed', sans-serif; font-size: 0.9rem; color: var(--muted); }
+
+/* TABS */
+.panel-tab { 
+  padding: 12px 18px; 
+  background: none; border: none; 
+  border-bottom: 2px solid transparent; 
+  color: var(--muted); 
+  font-family: var(--font-display); 
+  font-size: 0.9rem; letter-spacing: 1.5px; 
+  cursor: pointer; white-space: nowrap; transition: all .2s; 
+  text-transform: uppercase;
+}
+.panel-tab:hover { color: var(--text2); background: rgba(255,255,255,0.02); }
+.panel-tab.active { color: var(--red); border-bottom-color: var(--red); background: rgba(232,0,13,0.04); }
+
+/* CALENDARIO */
+.semana-header { font-family: 'Barlow Condensed', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 8px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; margin-top: 16px; }
+.semana-header:first-child { margin-top: 0; }
+.cal-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 10px; margin-bottom: 6px; border: 1px solid var(--border); background: var(--surface); }
+.cal-item.abono { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.06); }
+.cal-item.no-abono { border-color: rgba(204,26,26,0.4); background: rgba(204,26,26,0.06); }
+.cal-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.cal-dot.verde { background: #22c55e; }
+.cal-dot.rojo  { background: var(--danger); }
+.cal-fecha { font-family: 'Barlow Condensed', sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--muted); width: 32px; flex-shrink: 0; }
+.cal-cliente { font-family: 'Barlow Condensed', sans-serif; font-size: 0.95rem; font-weight: 700; flex: 1; }
+.cal-tecnico { font-size: 0.75rem; color: var(--muted); }
+.cal-cobro { font-size: 0.75rem; font-weight: 700; }
+.cal-cobro.verde { color: #22c55e; }
+.cal-cobro.rojo  { color: var(--danger); }
+.cal-monto { font-family: 'Barlow Condensed', sans-serif; font-size: 0.88rem; font-weight: 700; color: #22c55e; }
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .stats-bar { padding: 12px 16px; }
+  .main { padding: 16px; }
+  .grid { grid-template-columns: 1fr; }
+}
+
+/* SERVICIOS LIST */
+.servicio-card { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--brand); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; transition: border-left-color .2s; }
+.servicio-card:hover { border-left-color: var(--red); }
+.servicio-head { padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; cursor: pointer; }
+.servicio-head:hover { background: var(--surface2); }
+.svc-cliente { font-family: var(--font-display); font-size: 1.05rem; letter-spacing: 0.5px; color: var(--text); }
+.svc-meta { font-size: 0.72rem; color: var(--muted); margin-top: 3px; font-family: var(--font-body); }
+.svc-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.svc-badge { font-size: 0.7rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+.svc-badge.editado { background: rgba(245,166,35,0.15); border-color: rgba(245,166,35,0.4); color: #f5a623; }
+.svc-arrow { font-size: 0.9rem; color: var(--muted); transition: transform .2s; }
+.svc-arrow.open { transform: rotate(180deg); }
+.svc-detail { display: none; padding: 0 16px 14px; border-top: 1px solid var(--border); }
+.svc-detail.open { display: block; }
+.svc-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.svc-detail-item { background: var(--surface2); border-radius: 8px; padding: 8px 10px; }
+.svc-detail-label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.svc-detail-val { font-size: 0.88rem; font-weight: 600; margin-top: 2px; }
+.svc-detail-full { grid-column: 1 / -1; }
+.quimico-linea { font-size: 0.78rem; padding: 4px 0; border-bottom: 1px solid var(--border); color: var(--text); }
+.quimico-linea:last-child { border-bottom: none; }
+
+/* GRAFICO BARRAS */
+.chart-container { margin-top: 6px; }
+.bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bar-label { font-family: var(--font-display); font-size: 0.82rem; letter-spacing: 0.5px; color: var(--text2); width: 130px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; background: var(--surface2); border-radius: 3px; height: 20px; overflow: hidden; position: relative; }
+.bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #0f3a1a, #1a6b2f); transition: width .8s cubic-bezier(.2,.8,.4,1); display: flex; align-items: center; padding-left: 8px; min-width: 2px; }
+.bar-fill.red { background: linear-gradient(90deg, var(--red-dark), var(--red)); }
+.bar-val { font-family: var(--font-display); font-size: 0.78rem; letter-spacing: 0.5px; color: white; white-space: nowrap; }
+.bar-total { font-family: var(--font-display); font-size: 0.78rem; color: var(--muted); flex-shrink: 0; width: 60px; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo-row">
+    <svg id="experts-logo-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" width="40" height="40" style="flex-shrink:0;">
+  <style>
+    #experts-logo-spin { animation: expertsSpin 8s linear infinite; transform-origin: center; }
+    @keyframes expertsSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    #experts-logo-spin:hover { animation-duration: 1.5s; }
+  </style>
+  <!-- Fondo circular oscuro -->
+  <circle cx="22" cy="22" r="21" fill="#111" stroke="#e8000d" stroke-width="1.2" opacity="0.9"/>
+  <!-- X roja - trazo diagonal principal \ -->
+  <line x1="10" y1="9" x2="34" y2="35" stroke="#e8000d" stroke-width="5.5" stroke-linecap="round"/>
+  <!-- X roja - trazo diagonal / -->
+  <line x1="34" y1="9" x2="10" y2="35" stroke="#e8000d" stroke-width="5.5" stroke-linecap="round"/>
+  <!-- Trazo diagonal inferior derecho (elemento característico del logo) -->
+  <line x1="26" y1="30" x2="36" y2="39" stroke="#e8000d" stroke-width="4" stroke-linecap="round" opacity="0.85"/>
+</svg>
+    <div>
+      <div class="header-title" style="font-family:var(--font-display);font-size:1.25rem;letter-spacing:3px;color:var(--text);">e<span style="color:var(--red);font-size:1.4rem;text-shadow:0 0 10px var(--red-glow);">X</span>perts <span style="color:var(--muted);font-size:0.9rem;letter-spacing:2px;">PANEL</span></div>
+      <div class="header-sub">Administración · Tiempo real</div>
+    </div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <div class="hora-actual" id="horaActual"></div>
+    <div class="live-badge"><div class="live-dot"></div>EN VIVO</div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat total">
+    <div class="stat-num" id="statTotal">0</div>
+    <div class="stat-label">Técnicos</div>
+  </div>
+  <div class="stat active">
+    <div class="stat-num" id="statActivos">0</div>
+    <div class="stat-label">En servicio</div>
+  </div>
+  <div class="stat libre">
+    <div class="stat-num" id="statLibres">0</div>
+    <div class="stat-label">Disponibles</div>
+  </div>
+  <div class="stat" style="">
+    <div class="stat-num" id="statHoy" style="color:var(--accent)">0</div>
+    <div class="stat-label">Servicios hoy</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none;">
+  <button class="panel-tab active" id="tab-tecnicos" onclick="switchTab('tecnicos')">🟢 Técnicos</button>
+  <button class="panel-tab" id="tab-calendario" onclick="switchTab('calendario')">📅 Calendario</button>
+  <button class="panel-tab" id="tab-consumo" onclick="switchTab('consumo')">🧪 Consumo</button>
+  <button class="panel-tab" id="tab-analytics" onclick="switchTab('analytics')">📊 Analytics</button>
+  <button class="panel-tab" id="tab-stock" onclick="switchTab('stock')">📦 Stock</button>
+  <button class="panel-tab" id="tab-resumen" onclick="switchTab('resumen')">📋 Resumen</button>
+  <button class="panel-tab" id="tab-exportar" onclick="switchTab('exportar')">⬇️ Exportar</button>
+</div>
+
+<div class="main">
+
+<!-- ══ TAB: TÉCNICOS ══ -->
+<div id="panel-tecnicos" class="panel-section active">
+  <div class="section-title">Estado de técnicos</div>
+  <div class="grid" id="tecnicosGrid">
+    <div class="empty">
+      <div class="empty-icon">📡</div>
+      <div class="empty-title">Esperando conexión...</div>
+      <div class="empty-sub">Los técnicos aparecerán aquí en tiempo real<br>cuando inicien un servicio desde la app</div>
+    </div>
+  </div>
+</div><!-- end panel-tecnicos -->
+
+<!-- ══ TAB: CALENDARIO ══ -->
+<div id="panel-calendario" class="panel-section" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+    <div class="section-title" style="margin:0;">Servicios del mes</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="navMes(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">◀</button>
+      <div id="mesLabel" style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:var(--text);min-width:140px;text-align:center;"></div>
+      <button onclick="navMes(1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">▶</button>
+    </div>
+  </div>
+  <!-- Leyenda -->
+  <div style="display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted);">
+      <div style="width:12px;height:12px;border-radius:3px;background:#22c55e;"></div> Abonó
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--muted);">
+      <div style="width:12px;height:12px;border-radius:3px;background:var(--danger);"></div> No abonó
+    </div>
+  </div>
+  <div id="calendarioLista"></div>
+</div>
+
+<!-- ══ TAB: CONSUMO ══ -->
+<div id="panel-consumo" class="panel-section" style="display:none;">
+
+  <!-- Toggle General / Por Mes -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+    <div class="section-title" style="margin:0;flex:1;">Consumo de Químicos</div>
+    <div style="display:flex;gap:6px;">
+      <button id="cons_btn_general" onclick="switchConsumoMode('general')" style="padding:7px 16px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--green);border:none;color:white;">General</button>
+      <button id="cons_btn_mes" onclick="switchConsumoMode('mes')" style="padding:7px 16px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--muted);">Por Mes</button>
+    </div>
+  </div>
+
+  <!-- Navegador mes (solo en modo mes) -->
+  <div id="cons_mes_nav" style="display:none;align-items:center;gap:10px;margin-bottom:16px;">
+    <button onclick="navConsMes(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">◀</button>
+    <div id="cons_mes_label" style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--text);min-width:150px;text-align:center;"></div>
+    <button onclick="navConsMes(1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">▶</button>
+  </div>
+
+  <!-- Gráfico de barras acumulado (consumo tab existing) -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div id="chartQuimicos">
+      <div class="empty" style="padding:30px 0;"><div class="empty-icon" style="font-size:2rem;">🧪</div><div class="empty-title" style="font-size:0.95rem;">Sin datos de consumo aún</div></div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;" id="chartLeyenda"></div>
+  </div>
+
+  <!-- Servicios con vista calendario y filtros -->
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:8px;margin-bottom:12px;">
+    <div class="section-title" style="margin:0;">Servicios registrados</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input type="date" id="filtro_fecha" onchange="filtrarServiciosPorFecha()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;outline:none;">
+      <select id="filtro_tecnico" onchange="filtrarServiciosPorFecha()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;outline:none;">
+        <option value="">Todos los técnicos</option>
+        <option>Antonio</option>
+        <option>Angel</option>
+        <option>Daniel</option>
+      </select>
+      <select id="filtro_tipo" onchange="filtrarServiciosPorFecha()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.85rem;outline:none;">
+        <option value="">Todos los tipos</option>
+        <option>Preventivo DD</option>
+        <option>Cucarachas Chicas</option>
+        <option>Cucaracha Americana</option>
+        <option>Hormigas Rojas</option>
+        <option>Hormigas Podadoras</option>
+        <option>Hormigas Carpinteras</option>
+        <option>Roedores</option>
+        <option>Mosquitos</option>
+        <option>Otros</option>
+      </select>
+      <button onclick="limpiarFiltros()" style="padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;">✕ Limpiar</button>
+    </div>
+  </div>
+
+  <!-- Resumen del día seleccionado -->
+  <div id="resumen_dia" style="display:none;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 14px;margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;"></div>
+
+  <!-- Lista agrupada por día -->
+  <div id="serviciosList">
+    <div class="empty" style="padding:40px 0;">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Sin servicios registrados</div>
+      <div class="empty-sub">Los servicios aparecerán aquí cuando los técnicos envíen la ficha de cierre</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: ANALYTICS ══ -->
+<div id="panel-analytics" class="panel-section" style="display:none;">
+  <!-- Filtro: General vs Mes -->
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+    <div class="section-title" style="margin:0;flex:1;">📊 Analytics</div>
+    <div style="display:flex;gap:6px;">
+      <button id="anl_btn_general" onclick="switchAnalyticsMode('general')" style="padding:7px 16px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--green);border:none;color:white;">General</button>
+      <button id="anl_btn_mes" onclick="switchAnalyticsMode('mes')" style="padding:7px 16px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--muted);">Por Mes</button>
+    </div>
+  </div>
+
+  <!-- Vista General: filtro de período -->
+  <div id="anl_general_ctrl" style="margin-bottom:16px;">
+    <select id="analytics_periodo" onchange="renderAnalytics()" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:0.88rem;outline:none;">
+      <option value="7">Últimos 7 días</option>
+      <option value="30" selected>Últimos 30 días</option>
+      <option value="90">Últimos 3 meses</option>
+      <option value="365">Último año</option>
+      <option value="0">Todo</option>
+    </select>
+  </div>
+
+  <!-- Vista Mes: selector de mes -->
+  <div id="anl_mes_ctrl" style="display:none;margin-bottom:16px;display:none;align-items:center;gap:10px;">
+    <button onclick="navAnlMes(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">◀</button>
+    <div id="anl_mes_label" style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--text);min-width:150px;text-align:center;"></div>
+    <button onclick="navAnlMes(1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:8px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:700;">▶</button>
+  </div>
+
+  <!-- KPIs row -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px;" id="analytics_kpis"></div>
+
+  <!-- Gráfico XY consumo líquidos (cc/ml/lt) -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;">📈 Consumo de Líquidos (cc · ml · lt)</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Incluye productos medidos en cc, ml y litros</div>
+    <div id="analytics_chart_liquidos" style="position:relative;overflow-x:auto;"></div>
+    <div id="analytics_leyenda_liquidos" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;"></div>
+  </div>
+
+  <!-- Gráfico XY consumo sólidos (gr/kg) -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;">📈 Consumo de Sólidos / Polvos (gr · kg)</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Incluye productos medidos en gramos y kilogramos</div>
+    <div id="analytics_chart_solidos" style="position:relative;overflow-x:auto;"></div>
+    <div id="analytics_leyenda_solidos" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;"></div>
+  </div>
+
+  <!-- Gráfico unidades (unid.) -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px;">📈 Consumo por Unidades (unid.)</div>
+    <div id="analytics_chart_unidades" style="position:relative;overflow-x:auto;"></div>
+    <div id="analytics_leyenda_unidades" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;"></div>
+  </div>
+
+  <!-- Tiempo promedio por técnico -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">⏱ Tiempo Promedio por Técnico</div>
+    <div id="analytics_tiempo_tecnico"></div>
+  </div>
+
+  <!-- Servicios por técnico -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">🏆 Servicios por Técnico</div>
+    <div id="analytics_ranking"></div>
+  </div>
+
+  <!-- Tipos de servicio -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">🪲 Servicios por Tipo</div>
+    <div id="analytics_tipos"></div>
+  </div>
+
+  <!-- Graduación de plaga -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">📊 Distribución de Graduación de Plaga</div>
+    <div id="analytics_graduacion"></div>
+  </div>
+
+  <!-- Facturación -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">💰 Facturación Semanal</div>
+    <div id="analytics_facturacion"></div>
+  </div>
+
+  <!-- Heatmap días -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:14px;">🔥 Días con más actividad</div>
+    <div id="analytics_heatmap"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: STOCK ══ -->
+<div id="panel-stock" class="panel-section" style="display:none;">
+
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+    <div class="section-title" style="margin:0;">📦 Control de Stock</div>
+    <button onclick="abrirStockIngreso()" style="padding:8px 18px;background:#1a6b2f;border:none;border-radius:8px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;letter-spacing:0.5px;">
+      + Registrar Ingreso
+    </button>
+  </div>
+  <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:0.78rem;color:#60a5fa;font-family:var(--font-body);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <span>📅 Consumo calculado desde: <strong id="stock_fecha_corte_label"></strong></span>
+    <button onclick="cambiarFechaCorteStock()" style="background:rgba(59,130,246,0.2);border:1px solid rgba(59,130,246,0.3);color:#60a5fa;border-radius:6px;padding:3px 10px;font-family:var(--font-display);font-size:0.75rem;cursor:pointer;letter-spacing:1px;">CAMBIAR FECHA</button>
+  </div>
+
+  <!-- Alertas de stock bajo -->
+  <div id="stock_alertas" style="margin-bottom:14px;"></div>
+
+  <!-- Grid de productos -->
+  <div id="stock_grid" style="display:grid;gap:10px;"></div>
+
+</div>
+
+<!-- MODAL: REGISTRAR INGRESO DE STOCK -->
+<div id="stockIngresoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:600;padding:20px;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:#1a1d27;border:1px solid #2e3347;border-radius:20px;width:100%;max-width:400px;overflow:hidden;">
+    <div style="background:#1a6b2f;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:white;">📦 Registrar Ingreso</div>
+      <button onclick="cerrarStockIngreso()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Producto</label>
+        <select id="si_producto" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow',sans-serif;font-size:0.95rem;outline:none;"></select>
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Cantidad a ingresar</label>
+        <input type="number" id="si_cantidad" min="0" step="0.1" placeholder="Ej: 5" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;outline:none;">
+      </div>
+      <div style="margin-bottom:18px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Nota (opcional)</label>
+        <input type="text" id="si_nota" placeholder="Ej: compra proveedor X" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow',sans-serif;font-size:0.9rem;outline:none;">
+      </div>
+      <button onclick="confirmarIngreso()" style="width:100%;padding:14px;background:#1a6b2f;color:white;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;cursor:pointer;">
+        ✅ Confirmar Ingreso
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TAB: RESUMEN SEMANAL ══ -->
+<div id="panel-resumen" class="panel-section" style="display:none;">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+    <div class="section-title" style="margin:0;">📋 Resumen Semanal</div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button onclick="navResumenSemana(-1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--font-display);font-weight:700;">◀</button>
+      <div id="resumen_semana_label" style="font-family:var(--font-display);font-size:0.95rem;letter-spacing:1px;color:var(--text);min-width:180px;text-align:center;"></div>
+      <button onclick="navResumenSemana(1)" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--font-display);font-weight:700;">▶</button>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div id="resumen_kpis" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+  <!-- Top 3 Químicos -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+    <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">🧪 Top 3 Químicos</div>
+    <div id="resumen_quimicos"></div>
+  </div>
+
+  <!-- Técnico destacado -->
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+    <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:12px;">🏆 Técnico Destacado</div>
+    <div id="resumen_tecnico"></div>
+  </div>
+</div>
+
+<!-- ══ TAB: EXPORTAR ══ -->
+<div id="panel-exportar" class="panel-section" style="display:none;">
+  <div class="section-title" style="margin-bottom:16px;">⬇️ Exportar Datos</div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px;">
+    <div style="font-family:var(--font-display);font-size:1rem;letter-spacing:2px;color:var(--text);margin-bottom:6px;">SERVICIOS A EXCEL</div>
+    <div style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);margin-bottom:16px;">Exporta todos los servicios registrados con fecha, cliente, técnico, cobro y duración.</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <label style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;">Desde</label>
+        <input type="date" id="export_desde" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;outline:none;">
+      </div>
+      <div>
+        <label style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;">Hasta</label>
+        <input type="date" id="export_hasta" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;outline:none;">
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label style="font-family:var(--font-display);font-size:0.7rem;letter-spacing:1.5px;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;">Técnico (opcional)</label>
+      <select id="export_tecnico" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 11px;color:var(--text);font-family:var(--font-body);font-size:0.9rem;outline:none;">
+        <option value="">Todos los técnicos</option>
+        <option>Antonio</option>
+        <option>Angel</option>
+        <option>Daniel</option>
+      </select>
+    </div>
+
+    <div id="export_preview_count" style="font-size:0.8rem;color:var(--muted);margin-bottom:12px;font-family:var(--font-body);min-height:18px;"></div>
+
+    <button onclick="exportarExcel()" style="width:100%;padding:14px;background:var(--brand);color:white;border:none;border-radius:6px;font-family:var(--font-display);font-size:1rem;letter-spacing:2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;text-transform:uppercase;box-shadow:0 4px 16px rgba(26,107,47,0.3);">
+      📥 Descargar Excel
+    </button>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+    <div style="font-family:var(--font-display);font-size:0.75rem;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">Formato del archivo</div>
+    <div style="font-size:0.78rem;color:var(--text2);font-family:var(--font-body);line-height:1.6;">
+      📋 Columnas: Fecha · Cliente · Técnico · Tipo de servicio · Graduación · Duración · Abonó · Quién cobró · Monto · Forma de pago
+    </div>
+  </div>
+</div>
+
+</div><!-- end main -->
+
+<!-- MODAL: EDITAR SERVICIO COMPLETO -->
+<div id="editSvcModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:700;padding:12px;align-items:flex-start;justify-content:center;overflow-y:auto;">
+  <div style="background:#1a1d27;border:1px solid #2e3347;border-radius:20px;width:100%;max-width:520px;overflow:hidden;margin:auto;">
+    <div style="background:#1a4fa0;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1;">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:white;">✏️ Editar Servicio</div>
+        <div id="editSvc_subtitle" style="font-size:0.75rem;color:rgba(255,255,255,0.75);margin-top:2px;">—</div>
+      </div>
+      <button onclick="cerrarEditSvc()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;flex-shrink:0;">✕</button>
+    </div>
+    <div style="padding:20px;display:grid;gap:12px;">
+      <input type="hidden" id="editSvc_id">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Cliente</label>
+          <input type="text" id="editSvc_cliente" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:9px 11px;color:white;font-family:'Barlow',sans-serif;font-size:0.9rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Técnico</label>
+          <select id="editSvc_tecnico" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:9px 11px;color:white;font-family:'Barlow',sans-serif;font-size:0.9rem;outline:none;">
+            <option value="">— Seleccionar —</option>
+              <option value="Antonio">Antonio</option>
+              <option value="Angel">Ángel</option>
+              <option value="Daniel">Daniel</option>
+            <option value="__custom__">Otro...</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Fecha</label>
+          <input type="date" id="editSvc_fecha" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:9px 11px;color:white;font-family:'Barlow',sans-serif;font-size:0.9rem;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Duración (HH:MM:SS)</label>
+          <input type="text" id="editSvc_duracion" placeholder="00:30:00" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:9px 11px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;outline:none;">
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Descripción del servicio</label>
+        <textarea id="editSvc_desc" rows="2" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:9px 11px;color:white;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;resize:none;"></textarea>
+      </div>
+
+      <div>
+        <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Sugerencias al cliente</label>
+        <textarea id="editSvc_suger" rows="2" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:9px 11px;color:white;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;resize:none;"></textarea>
+      </div>
+
+      <!-- COBRO -->
+      <div>
+        <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Estado de cobro</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <button id="esv_btn_no" onclick="selEditSvcCobro('no')" style="padding:10px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .15s;">❌ No abonó</button>
+          <button id="esv_btn_si" onclick="selEditSvcCobro('si')" style="padding:10px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .15s;">✅ Abonó</button>
+        </div>
+        <div id="esv_cobro_extra" style="display:none;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div>
+            <label style="font-size:0.68rem;color:#8b92a5;display:block;margin-bottom:4px;">¿Quién cobró?</label>
+            <select id="editSvc_quien" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:8px;color:white;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;">
+              <option value="">—</option>
+              <option>Angel</option>
+              <option>Daniel</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.68rem;color:#8b92a5;display:block;margin-bottom:4px;">Forma de pago</label>
+            <select id="editSvc_pago" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:8px;color:white;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;">
+              <option value="">—</option>
+              <option>Efectivo</option><option>Transferencia</option><option>Cuenta cte.</option><option>Débito</option><option>Crédito</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.68rem;color:#8b92a5;display:block;margin-bottom:4px;">Monto ($)</label>
+            <input type="number" id="editSvc_monto" placeholder="0" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:8px;color:white;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- QUÍMICOS -->
+      <div>
+        <label style="font-size:0.7rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Litros de caldo · Químicos</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <input type="number" id="editSvc_litros" placeholder="Litros" step="0.5" min="0" style="width:90px;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:8px;color:white;font-family:'Barlow',sans-serif;font-size:0.9rem;font-weight:700;outline:none;">
+          <span style="font-size:0.75rem;color:#8b92a5;">litros de caldo</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr>
+            <th style="font-size:0.65rem;color:#8b92a5;text-align:left;padding:4px 6px;font-weight:700;text-transform:uppercase;">Producto</th>
+            <th style="font-size:0.65rem;color:#8b92a5;text-align:left;padding:4px 6px;font-weight:700;text-transform:uppercase;">Cant.</th>
+            <th style="font-size:0.65rem;color:#8b92a5;text-align:left;padding:4px 6px;font-weight:700;text-transform:uppercase;">Unidad</th>
+          </tr></thead>
+          <tbody id="editSvc_quimicos"></tbody>
+        </table>
+      </div>
+
+      <button onclick="guardarEditSvc()" style="width:100%;padding:14px;background:#1a4fa0;color:white;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:0.5px;cursor:pointer;">
+        💾 Guardar cambios
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDITAR COBRO -->
+<div id="editCobroModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:600;padding:20px;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:#1a1d27;border:1px solid #2e3347;border-radius:20px;width:100%;max-width:380px;overflow:hidden;">
+    <div style="background:#1a6b2f;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:white;">✏️ Modificar Cobro</div>
+        <div id="editCobro_subtitle" style="font-size:0.75rem;color:rgba(255,255,255,0.75);margin-top:2px;">—</div>
+      </div>
+      <button onclick="cerrarEditCobro()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <input type="hidden" id="editCobro_svcId">
+      <input type="hidden" id="editCobro_idx">
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Estado de cobro</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="ec_btn_no" onclick="selEditCobroEstado('no')" style="padding:12px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all .15s;">❌ No abonó</button>
+          <button id="ec_btn_si" onclick="selEditCobroEstado('si')" style="padding:12px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all .15s;">✅ Abonó</button>
+        </div>
+      </div>
+
+      <div id="ec_quien_field" style="display:none;margin-bottom:14px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">¿Quién cobró?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="ec_btn_angel" onclick="selEditCobroQuien('Angel')" style="padding:12px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all .15s;">👤 Ángel</button>
+          <button id="ec_btn_daniel" onclick="selEditCobroQuien('Daniel')" style="padding:12px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all .15s;">👤 Daniel</button>
+        </div>
+      </div>
+
+      <div id="ec_monto_field" style="display:none;margin-bottom:14px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Monto cobrado ($)</label>
+        <input type="number" id="ec_monto" placeholder="Ej: 15000" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow',sans-serif;font-size:1rem;font-weight:600;outline:none;">
+      </div>
+
+      <button onclick="guardarEditCobro()" style="width:100%;padding:14px;background:#1a6b2f;color:white;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:0.5px;cursor:pointer;">
+        💾 Guardar cambio
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LIBERAR TÉCNICO MANUALMENTE -->
+<div id="liberarModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:600;padding:20px;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:#1a1d27;border:1px solid #2e3347;border-radius:20px;width:100%;max-width:420px;overflow:hidden;">
+    <div style="background:#cc1a1a;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;color:white;">🔓 Liberar Técnico</div>
+        <div id="liberar_subtitle" style="font-size:0.78rem;color:rgba(255,255,255,0.8);margin-top:2px;">—</div>
+      </div>
+      <button onclick="cerrarLiberarModal()" style="background:rgba(255,255,255,0.2);border:none;color:white;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;">✕</button>
+    </div>
+    <div style="padding:20px;">
+      <p style="font-size:0.82rem;color:#8b92a5;margin-bottom:16px;line-height:1.5;">Completá los datos del servicio para que quede registrado correctamente.</p>
+      <input type="hidden" id="liberar_tecId">
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Cliente / Establecimiento</label>
+        <input type="text" id="liberar_cliente" placeholder="Nombre del cliente" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow',sans-serif;font-size:0.95rem;outline:none;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div>
+          <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Duración (HH:MM:SS)</label>
+          <input type="text" id="liberar_duracion" placeholder="00:30:00" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:0.95rem;font-weight:700;outline:none;">
+        </div>
+        <div>
+          <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Monto cobrado ($)</label>
+          <input type="number" id="liberar_monto" placeholder="0" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow',sans-serif;font-size:0.95rem;outline:none;">
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Estado de cobro</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="lib_btn_no" onclick="selLiberarCobro('no')" style="padding:10px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;">❌ No abonó</button>
+          <button id="lib_btn_si" onclick="selLiberarCobro('si')" style="padding:10px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;">✅ Abonó</button>
+        </div>
+      </div>
+
+      <div id="lib_quien_field" style="display:none;margin-bottom:12px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">¿Quién cobró?</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button id="lib_btn_angel" onclick="selLiberarQuien('Angel')" style="padding:10px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;">👤 Ángel</button>
+          <button id="lib_btn_daniel" onclick="selLiberarQuien('Daniel')" style="padding:10px;border:2px solid #2e3347;border-radius:8px;background:#22263a;color:#8b92a5;font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;">👤 Daniel</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="font-size:0.72rem;font-weight:700;color:#8b92a5;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px;">Descripción (opcional)</label>
+        <textarea id="liberar_desc" rows="2" placeholder="Descripción del servicio..." style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:8px;padding:10px 12px;color:white;font-family:'Barlow',sans-serif;font-size:0.88rem;outline:none;resize:none;"></textarea>
+      </div>
+
+      <button onclick="confirmarLiberar()" style="width:100%;padding:14px;background:#1a6b2f;color:white;border:none;border-radius:10px;font-family:'Barlow Condensed',sans-serif;font-size:1.05rem;font-weight:700;letter-spacing:0.5px;cursor:pointer;">
+        🔓 Liberar y registrar servicio
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── INIT CALENDAR ──
+let calMes  = new Date().getMonth();
+let calAnio = new Date().getFullYear();
+(function() {
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const lbl = document.getElementById('mesLabel');
+  if (lbl) lbl.textContent = meses[calMes] + ' ' + calAnio;
+})();
+
+// ── RELOJ ──
+function tickClock() {
+  document.getElementById('horaActual').textContent =
+    new Date().toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ── CRONÓMETROS EN VIVO ──
+const cronos = {}; // tecId → intervalId
+
+function startCrono(tecId, inicioISO) {
+  if (cronos[tecId]) clearInterval(cronos[tecId]);
+  cronos[tecId] = setInterval(() => {
+    const el = document.getElementById('crono_' + tecId);
+    if (!el) { clearInterval(cronos[tecId]); return; }
+    const ms = Date.now() - new Date(inicioISO).getTime();
+    el.textContent = formatTime(ms);
+  }, 1000);
+}
+
+function stopCrono(tecId) {
+  if (cronos[tecId]) { clearInterval(cronos[tecId]); delete cronos[tecId]; }
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600).toString().padStart(2,'0');
+  const m = Math.floor((s % 3600) / 60).toString().padStart(2,'0');
+  const sec = (s % 60).toString().padStart(2,'0');
+  return `${h}:${m}:${sec}`;
+}
+
+// ── INICIALES AVATAR ──
+function initiales(nombre) {
+  return nombre.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
+}
+
+// ── RENDER TÉCNICOS (llamado por Firebase) ──
+let serviciosHoy = 0;
+window.renderTecnicos = function(data) {
+  const grid = document.getElementById('tecnicosGrid');
+  const keys = Object.keys(data);
+
+  if (keys.length === 0) {
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">📡</div><div class="empty-title">Esperando conexión...</div><div class="empty-sub">Los técnicos aparecerán aquí en tiempo real<br>cuando inicien un servicio desde la app</div></div>`;
+    updateStats(0, 0, 0);
+    return;
+  }
+
+  let activos = 0, libres = 0;
+  serviciosHoy = 0;
+
+  // Parar cronos viejos
+  Object.keys(cronos).forEach(id => { if (!data[id]) stopCrono(id); });
+
+  grid.innerHTML = keys.map(tecId => {
+    const t = data[tecId];
+    const enServicio = t.estado === 'en_servicio';
+    if (enServicio) activos++; else libres++;
+
+    // serviciosHoy se calcula desde la colección de servicios, no desde técnicos
+
+    const ini = enServicio && t.inicio ? new Date(t.inicio) : null;
+    const horaInicio = ini ? ini.toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}) : '';
+    const msTranscurrido = ini ? Date.now() - ini.getTime() : 0;
+
+    return `
+    <div class="tecnico-card ${enServicio ? 'en-servicio' : 'libre'}">
+      <div class="card-top">
+        <div class="avatar">
+          <div class="avatar-ring"></div>
+          ${initiales(t.nombre)}
+        </div>
+        <div class="tecnico-info">
+          <div class="tecnico-nombre">${t.nombre}</div>
+          <div class="tecnico-estado ${enServicio ? 'estado-activo' : 'estado-libre'}">
+            <div class="estado-dot ${enServicio ? 'activo-dot' : 'libre-dot'}"></div>
+            ${enServicio ? 'EN SERVICIO' : 'DISPONIBLE'}
+          </div>
+        </div>
+      </div>
+      <div class="card-body">
+        ${enServicio ? `
+          <div class="crono-box">
+            <div>
+              <div class="crono-label">⏱ Tiempo transcurrido</div>
+              <div class="crono-time" id="crono_${tecId}">${formatTime(msTranscurrido)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:0.72rem;color:var(--muted)">Inicio</div>
+              <div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:#f87171">${horaInicio}</div>
+            </div>
+          </div>
+          <div class="card-info-row">
+            <span class="icon">🏢</span>
+            <div>
+              <div class="label">Cliente actual</div>
+              <div class="value">${t.cliente || '—'}</div>
+            </div>
+          </div>
+          <button onclick="abrirLiberarModal('${tecId}', '${t.nombre}', '${t.cliente||''}')" style="width:100%;margin-top:4px;padding:10px;background:rgba(204,26,26,0.15);border:1.5px solid rgba(204,26,26,0.4);border-radius:8px;color:#f87171;font-family:'Barlow Condensed',sans-serif;font-size:0.88rem;font-weight:700;cursor:pointer;letter-spacing:0.5px;">
+            🔓 Liberar manualmente
+          </button>
+        ` : `
+          <div class="ultimo-box">
+            <div class="ultimo-label">✅ Último servicio</div>
+            <div class="ultimo-val">${t.ultimoServicio || 'Sin registros aún'}</div>
+            ${t.duracion ? `<div class="ultimo-dur">Duración: ${t.duracion}</div>` : ''}
+          </div>
+          <button onclick="eliminarTecnico('${tecId}', '${t.nombre}')" style="width:100%;margin-top:8px;padding:8px;background:rgba(204,26,26,0.1);border:1px solid rgba(204,26,26,0.3);border-radius:8px;color:#f87171;font-family:'Barlow Condensed',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;">
+            🗑️ Eliminar técnico
+          </button>
+        `}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Arrancar cronómetros para los activos
+  keys.forEach(tecId => {
+    const t = data[tecId];
+    if (t.estado === 'en_servicio' && t.inicio) {
+      startCrono(tecId, t.inicio);
+    } else {
+      stopCrono(tecId);
+    }
+  });
+
+  updateStats(keys.length, activos, libres);
+};
+
+function updateStats(total, activos, libres) {
+  document.getElementById('statTotal').textContent   = total;
+  document.getElementById('statActivos').textContent = activos;
+  document.getElementById('statLibres').textContent  = libres;
+  document.getElementById('statHoy').textContent     = serviciosHoy;
+}
+
+function refreshStatHoy() {
+  document.getElementById('statHoy').textContent = serviciosHoy;
+}
+
+// ══════════════════════════════════════════
+// EDITAR COBRO DESDE PANEL
+// ══════════════════════════════════════════
+let ecEstado = '', ecQuien = '';
+
+function abrirEditCobro(svcId, idx) {
+  // Buscar el servicio en allServicios
+  const s = allServicios.find(x => x.id === svcId);
+  if (!s) return;
+  document.getElementById('editCobro_svcId').value = svcId;
+  document.getElementById('editCobro_idx').value = idx;
+  document.getElementById('editCobro_subtitle').textContent = s.cliente + ' · ' + s.fecha;
+  document.getElementById('ec_monto').value = s.monto || '';
+
+  // Reset botones
+  ['ec_btn_no','ec_btn_si','ec_btn_angel','ec_btn_daniel'].forEach(id => {
+    const b = document.getElementById(id);
+    b.style.borderColor='#2e3347'; b.style.color='#8b92a5'; b.style.background='#22263a';
+  });
+
+  // Cargar estado actual
+  selEditCobroEstado(s.abono ? 'si' : 'no');
+  if (s.abono && s.quienCobro) selEditCobroQuien(s.quienCobro);
+
+  document.getElementById('editCobroModal').style.display = 'flex';
+}
+
+function cerrarEditCobro() {
+  document.getElementById('editCobroModal').style.display = 'none';
+}
+
+function selEditCobroEstado(estado) {
+  ecEstado = estado;
+  const btnNo = document.getElementById('ec_btn_no');
+  const btnSi = document.getElementById('ec_btn_si');
+  if (estado === 'no') {
+    btnNo.style.borderColor='#cc1a1a'; btnNo.style.color='#f87171'; btnNo.style.background='rgba(204,26,26,0.15)';
+    btnSi.style.borderColor='#2e3347'; btnSi.style.color='#8b92a5'; btnSi.style.background='#22263a';
+    document.getElementById('ec_quien_field').style.display = 'none';
+    document.getElementById('ec_monto_field').style.display = 'none';
+    ecQuien = '';
+  } else {
+    btnSi.style.borderColor='#22c55e'; btnSi.style.color='#22c55e'; btnSi.style.background='rgba(34,197,94,0.1)';
+    btnNo.style.borderColor='#2e3347'; btnNo.style.color='#8b92a5'; btnNo.style.background='#22263a';
+    document.getElementById('ec_quien_field').style.display = 'block';
+    document.getElementById('ec_monto_field').style.display = 'block';
+  }
+}
+
+function selEditCobroQuien(nombre) {
+  ecQuien = nombre;
+  ['angel','daniel'].forEach(n => {
+    const b = document.getElementById('ec_btn_' + n);
+    if (n === nombre.toLowerCase()) {
+      b.style.borderColor='#f0f2f5'; b.style.color='white'; b.style.background='#444';
+    } else {
+      b.style.borderColor='#2e3347'; b.style.color='#8b92a5'; b.style.background='#22263a';
+    }
+  });
+}
+
+function guardarEditCobro() {
+  const svcId = document.getElementById('editCobro_svcId').value;
+  const abono = ecEstado === 'si';
+  const monto = document.getElementById('ec_monto').value || '';
+
+  // Actualizar en Firebase
+  _fbDb.ref('servicios/' + svcId).update({
+    abono,
+    quienCobro: abono ? ecQuien : '',
+    monto: abono ? monto : '',
+    cobroEditado: true,
+    cobroEditadoEn: new Date().toISOString()
+  }).then(() => {
+    console.log('✅ Cobro actualizado:', svcId);
+    cerrarEditCobro();
+    // Toast
+    const t = document.createElement('div');
+    t.textContent = abono ? '✅ Cobro registrado — ' + ecQuien : '✅ Marcado como no abonado';
+    t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a6b2f;color:white;font-family:"Barlow Condensed",sans-serif;font-size:0.9rem;font-weight:700;padding:12px 24px;border-radius:30px;z-index:999;white-space:nowrap;';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+  }).catch(e => {
+    console.error('Error actualizando cobro:', e);
+    alert('Error al guardar. Verificá tu conexión.');
+  });
+}
+
+// ══════════════════════════════════════════
+// LIBERAR TÉCNICO MANUALMENTE
+// ══════════════════════════════════════════
+let liberarCobroEstado = '';
+let liberarQuienEstado = '';
+
+function abrirLiberarModal(tecId, nombre, cliente) {
+  document.getElementById('liberar_tecId').value = tecId;
+  document.getElementById('liberar_subtitle').textContent = nombre + (cliente ? ' — ' + cliente : '');
+  document.getElementById('liberar_cliente').value = cliente || '';
+  document.getElementById('liberar_duracion').value = '';
+  document.getElementById('liberar_monto').value = '';
+  document.getElementById('liberar_desc').value = '';
+  liberarCobroEstado = '';
+  liberarQuienEstado = '';
+  // Reset buttons
+  ['lib_btn_no','lib_btn_si','lib_btn_angel','lib_btn_daniel'].forEach(id => {
+    const b = document.getElementById(id);
+    if(b) { b.style.borderColor='#2e3347'; b.style.color='#8b92a5'; b.style.background='#22263a'; }
+  });
+  document.getElementById('lib_quien_field').style.display = 'none';
+  document.getElementById('liberarModal').style.display = 'flex';
+}
+
+function cerrarLiberarModal() {
+  document.getElementById('liberarModal').style.display = 'none';
+}
+
+function selLiberarCobro(estado) {
+  liberarCobroEstado = estado;
+  const btnNo = document.getElementById('lib_btn_no');
+  const btnSi = document.getElementById('lib_btn_si');
+  if (estado === 'no') {
+    btnNo.style.borderColor='#cc1a1a'; btnNo.style.color='#f87171'; btnNo.style.background='rgba(204,26,26,0.15)';
+    btnSi.style.borderColor='#2e3347'; btnSi.style.color='#8b92a5'; btnSi.style.background='#22263a';
+    document.getElementById('lib_quien_field').style.display = 'none';
+  } else {
+    btnSi.style.borderColor='#22c55e'; btnSi.style.color='#22c55e'; btnSi.style.background='rgba(34,197,94,0.1)';
+    btnNo.style.borderColor='#2e3347'; btnNo.style.color='#8b92a5'; btnNo.style.background='#22263a';
+    document.getElementById('lib_quien_field').style.display = 'block';
+  }
+}
+
+function selLiberarQuien(nombre) {
+  liberarQuienEstado = nombre;
+  ['angel','daniel'].forEach(n => {
+    const b = document.getElementById('lib_btn_' + n);
+    if (n === nombre.toLowerCase()) {
+      b.style.borderColor='#f0f2f5'; b.style.color='white'; b.style.background='#444';
+    } else {
+      b.style.borderColor='#2e3347'; b.style.color='#8b92a5'; b.style.background='#22263a';
+    }
+  });
+}
+
+function confirmarLiberar() {
+  const tecId  = document.getElementById('liberar_tecId').value;
+  const cliente = document.getElementById('liberar_cliente').value || 'Sin cliente';
+  const duracion = document.getElementById('liberar_duracion').value || '00:00:00';
+  const monto  = document.getElementById('liberar_monto').value || '';
+  const desc   = document.getElementById('liberar_desc').value || '';
+  const abono  = liberarCobroEstado === 'si';
+  const ahora  = new Date();
+
+  // 1. Actualizar estado del técnico a LIBRE en Firebase
+  _fbDb.ref('tecnicos/' + tecId).update({
+    estado: 'libre',
+    cliente: '',
+    inicio: '',
+    ultimoServicio: cliente,
+    duracion: duracion,
+    timestamp: Date.now()
+  }).then(() => console.log('✅ Técnico liberado:', tecId))
+    .catch(e => console.error('Error liberando técnico:', e));
+
+  // 2. Registrar servicio en Firebase
+  const svcId = 'svc_manual_' + Date.now();
+  const registro = {
+    id: svcId,
+    cliente,
+    tecnico: tecId.replace(/_/g,' '),
+    fecha: ahora.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'}),
+    duracion,
+    abono,
+    quienCobro: abono ? liberarQuienEstado : '',
+    pago: '',
+    monto,
+    descripcion: desc,
+    sugerencias: '',
+    litros: 0,
+    quimicos: [],
+    timestamp: Date.now(),
+    cargadoManualmente: true
+  };
+
+  _fbDb.ref('servicios/' + svcId).set(registro)
+    .then(() => console.log('✅ Servicio manual registrado'))
+    .catch(e => console.error('Error registrando servicio:', e));
+
+  cerrarLiberarModal();
+
+  // Toast
+  const t = document.createElement('div');
+  t.textContent = '✅ Técnico liberado y servicio registrado';
+  t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a6b2f;color:white;font-family:"Barlow Condensed",sans-serif;font-size:0.9rem;font-weight:700;padding:12px 24px;border-radius:30px;z-index:999;white-space:nowrap;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ══════════════════════════════════════════
+// ELIMINAR TÉCNICO
+// ══════════════════════════════════════════
+function eliminarTecnico(tecId, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}" del panel? Esto solo lo quita del estado en tiempo real, no borra sus servicios registrados.`)) return;
+  _fbDb.ref('tecnicos/' + tecId).remove()
+    .then(() => {
+      console.log('✅ Técnico eliminado:', tecId);
+      const t = document.createElement('div');
+      t.textContent = '🗑️ Técnico eliminado';
+      t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#cc1a1a;color:white;font-family:"Barlow Condensed",sans-serif;font-size:0.9rem;font-weight:700;padding:12px 24px;border-radius:30px;z-index:999;white-space:nowrap;';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    })
+    .catch(e => { console.error('Error:', e); alert('Error al eliminar. Verificá conexión.'); });
+}
+
+// ══════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════
+function switchTab(name) {
+  ['tecnicos','calendario','consumo','analytics','stock','resumen','exportar'].forEach(t => {
+    document.getElementById('panel-' + t).style.display = t === name ? 'block' : 'none';
+    document.getElementById('tab-' + t).classList.toggle('active', t === name);
+  });
+  if (name === 'calendario') renderCalendario();
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'consumo') { updateConsMesLabel(); recalcConsumo(); }
+  if (name === 'stock') renderStock();
+  if (name === 'resumen') renderResumenSemanal();
+  if (name === 'exportar') initExportar();
+}
+
+// ══════════════════════════════════════════
+// EDITAR SERVICIO COMPLETO
+// ══════════════════════════════════════════
+let editSvcCobroEstado = '';
+const QUIMICOS_LIST = ['','Fipronil','Starycide','Deltametrina','Demoledor','Cipermetrina','Troya','Formix','Ultra Block','Placa de pegamento','DEPE','Fipronil Gel','Apollo','Chemofog','Caldo','Bandejas Cebaderas','Guantes','Gel Roedores','Otros'];
+const UNIDADES_LIST = ['','ml','gr','lt','kg','unid.'];
+
+function abrirEditServicio(svcId) {
+  const s = allServicios.find(x => x.id === svcId);
+  if (!s) return;
+
+  document.getElementById('editSvc_id').value = svcId;
+  document.getElementById('editSvc_subtitle').textContent = (s.cliente||'—') + ' · ' + (s.fecha||'—');
+  document.getElementById('editSvc_cliente').value = s.cliente || '';
+  document.getElementById('editSvc_duracion').value = s.duracion || '';
+  document.getElementById('editSvc_desc').value = s.descripcion || '';
+  document.getElementById('editSvc_suger').value = s.sugerencias || '';
+  document.getElementById('editSvc_litros').value = s.litros || '';
+  document.getElementById('editSvc_monto').value = s.monto || '';
+
+  // Fecha
+  if (s.timestamp) {
+    const d = new Date(s.timestamp);
+    document.getElementById('editSvc_fecha').value = d.toISOString().split('T')[0];
+  }
+
+  // Técnico
+  const tecSel = document.getElementById('editSvc_tecnico');
+  const tecVal = s.tecnico || '';
+  if (tecSel.querySelector(`option[value="${tecVal}"]`)) {
+    tecSel.value = tecVal;
+  } else if (tecVal) {
+    const opt = document.createElement('option');
+    opt.value = tecVal; opt.textContent = tecVal;
+    tecSel.insertBefore(opt, tecSel.querySelector('[value="__custom__"]'));
+    tecSel.value = tecVal;
+  }
+
+  // Pago y quien cobró
+  const pago = document.getElementById('editSvc_pago');
+  const quien = document.getElementById('editSvc_quien');
+  if (pago.querySelector(`option[value="${s.pago||''}"]`)) pago.value = s.pago || '';
+  if (quien.querySelector(`option[value="${s.quienCobro||''}"]`)) quien.value = s.quienCobro || '';
+
+  // Cobro
+  selEditSvcCobro(s.abono ? 'si' : 'no');
+
+  // Químicos
+  const tbody = document.getElementById('editSvc_quimicos');
+  tbody.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const q = (s.quimicos||[])[i] || {};
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="padding:3px 4px;">
+        <select style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:6px;padding:6px;color:white;font-size:0.82rem;outline:none;" id="esv_q_prod_${i}">
+          ${QUIMICOS_LIST.map(o => `<option value="${o}" ${q.prod===o?'selected':''}>${o||'— Seleccionar —'}</option>`).join('')}
+        </select>
+      </td>
+      <td style="padding:3px 4px;"><input type="number" id="esv_q_cant_${i}" value="${q.cant||''}" step="0.1" min="0" style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:6px;padding:6px;color:white;font-size:0.82rem;outline:none;"></td>
+      <td style="padding:3px 4px;">
+        <select style="width:100%;background:#22263a;border:1px solid #2e3347;border-radius:6px;padding:6px;color:white;font-size:0.82rem;outline:none;" id="esv_q_unit_${i}">
+          ${UNIDADES_LIST.map(u => `<option value="${u}" ${q.unit===u?'selected':''}>${u||'—'}</option>`).join('')}
+        </select>
+      </td>`;
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById('editSvcModal').style.display = 'flex';
+}
+
+function cerrarEditSvc() {
+  document.getElementById('editSvcModal').style.display = 'none';
+}
+
+function selEditSvcCobro(estado) {
+  editSvcCobroEstado = estado;
+  const btnNo = document.getElementById('esv_btn_no');
+  const btnSi = document.getElementById('esv_btn_si');
+  const extra = document.getElementById('esv_cobro_extra');
+  if (estado === 'no') {
+    btnNo.style.cssText += ';border-color:#cc1a1a;color:#f87171;background:rgba(204,26,26,0.15);';
+    btnSi.style.cssText += ';border-color:#2e3347;color:#8b92a5;background:#22263a;';
+    extra.style.display = 'none';
+  } else {
+    btnSi.style.cssText += ';border-color:#22c55e;color:#22c55e;background:rgba(34,197,94,0.1);';
+    btnNo.style.cssText += ';border-color:#2e3347;color:#8b92a5;background:#22263a;';
+    extra.style.display = 'grid';
+  }
+}
+
+function eliminarServicio(svcId, cliente, fecha) {
+  if (!confirm(`¿Eliminar el servicio de "${cliente}" del ${fecha}?
+Esta acción no se puede deshacer.`)) return;
+  _fbDb.ref('servicios/' + svcId).remove()
+    .then(() => {
+      const t = document.createElement('div');
+      t.textContent = '🗑️ Servicio eliminado';
+      t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#cc1a1a;color:white;font-family:"Barlow Condensed",sans-serif;font-size:0.9rem;font-weight:700;padding:12px 24px;border-radius:30px;z-index:999;white-space:nowrap;';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    })
+    .catch(e => { console.error(e); alert('Error al eliminar. Verificá conexión.'); });
+}
+
+function guardarEditSvc() {
+  const id = document.getElementById('editSvc_id').value;
+  const abono = editSvcCobroEstado === 'si';
+
+  const quimicos = [];
+  for (let i = 0; i < 5; i++) {
+    const prod = document.getElementById(`esv_q_prod_${i}`)?.value;
+    const cant = parseFloat(document.getElementById(`esv_q_cant_${i}`)?.value) || 0;
+    const unit = document.getElementById(`esv_q_unit_${i}`)?.value;
+    if (prod) quimicos.push({ prod, cant, unit });
+  }
+
+  // Parse fecha back to timestamp
+  const fechaInput = document.getElementById('editSvc_fecha').value;
+  const nuevoTs = fechaInput ? new Date(fechaInput + 'T12:00:00').getTime() : null;
+
+  const updates = {
+    cliente: document.getElementById('editSvc_cliente').value || '—',
+    tecnico: document.getElementById('editSvc_tecnico').value === '__custom__' ? '—' : document.getElementById('editSvc_tecnico').value,
+    duracion: document.getElementById('editSvc_duracion').value || '00:00:00',
+    descripcion: document.getElementById('editSvc_desc').value || '',
+    sugerencias: document.getElementById('editSvc_suger').value || '',
+    abono,
+    quienCobro: abono ? (document.getElementById('editSvc_quien').value || '') : '',
+    pago: abono ? (document.getElementById('editSvc_pago').value || '') : '',
+    monto: abono ? (document.getElementById('editSvc_monto').value || '') : '',
+    litros: parseFloat(document.getElementById('editSvc_litros').value) || 0,
+    quimicos,
+    editadoEnPanel: true,
+    editadoEn: new Date().toISOString()
+  };
+  if (nuevoTs) updates.timestamp = nuevoTs;
+
+  _fbDb.ref('servicios/' + id).update(updates)
+    .then(() => {
+      cerrarEditSvc();
+      const t = document.createElement('div');
+      t.textContent = '✅ Servicio actualizado';
+      t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a4fa0;color:white;font-family:"Barlow Condensed",sans-serif;font-size:0.9rem;font-weight:700;padding:12px 24px;border-radius:30px;z-index:999;white-space:nowrap;';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    })
+    .catch(e => { console.error(e); alert('Error al guardar. Verificá conexión.'); });
+}
+
+// ══════════════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════════════
+const COLORES_QUIMICOS = ['#22c55e','#f5a623','#3b82f6','#a855f7','#ec4899','#14b8a6','#f97316','#ef4444','#84cc16','#06b6d4','#8b5cf6','#f59e0b'];
+
+let anlMode = 'general'; // 'general' | 'mes'
+let anlMes = new Date().getMonth();
+let anlAnio = new Date().getFullYear();
+
+function switchAnalyticsMode(mode) {
+  anlMode = mode;
+  const isGeneral = mode === 'general';
+  document.getElementById('anl_btn_general').style.cssText = isGeneral
+    ? 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--green);border:none;color:white;'
+    : 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--muted);';
+  document.getElementById('anl_btn_mes').style.cssText = !isGeneral
+    ? 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:#1a4fa0;border:none;color:white;'
+    : 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--muted);';
+  document.getElementById('anl_general_ctrl').style.display = isGeneral ? 'block' : 'none';
+  document.getElementById('anl_mes_ctrl').style.display = isGeneral ? 'none' : 'flex';
+  if (!isGeneral) updateAnlMesLabel();
+  renderAnalytics();
+}
+
+function navAnlMes(dir) {
+  anlMes += dir;
+  if (anlMes > 11) { anlMes = 0; anlAnio++; }
+  if (anlMes < 0)  { anlMes = 11; anlAnio--; }
+  updateAnlMesLabel();
+  renderAnalytics();
+}
+
+function updateAnlMesLabel() {
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const lbl = document.getElementById('anl_mes_label');
+  if (lbl) lbl.textContent = meses[anlMes] + ' ' + anlAnio;
+}
+
+function getServiciosFiltrados() {
+  if (anlMode === 'mes') {
+    return allServicios.filter(s => {
+      if (!s.timestamp) return false;
+      const d = new Date(s.timestamp);
+      return d.getMonth() === anlMes && d.getFullYear() === anlAnio;
+    });
+  }
+  const dias = parseInt(document.getElementById('analytics_periodo')?.value || '30');
+  if (dias === 0) return allServicios;
+  const desde = Date.now() - dias * 24 * 60 * 60 * 1000;
+  return allServicios.filter(s => s.timestamp >= desde);
+}
+
+function duracionAMinutos(dur) {
+  if (!dur) return 0;
+  const parts = dur.split(':').map(Number);
+  if (parts.length === 3) return parts[0]*60 + parts[1] + parts[2]/60;
+  if (parts.length === 2) return parts[0]*60 + parts[1];
+  return 0;
+}
+
+function minutosAStr(min) {
+  const h = Math.floor(min/60), m = Math.round(min%60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function renderAnalytics() {
+  const servicios = getServiciosFiltrados();
+
+  // ── KPIs ──
+  const totalSvc = servicios.length;
+  const cobrados = servicios.filter(s => s.abono).length;
+  const facturacion = servicios.reduce((sum, s) => sum + (parseFloat(s.monto)||0), 0);
+  const duraciones = servicios.map(s => duracionAMinutos(s.duracion)).filter(d => d > 0);
+  const promDur = duraciones.length > 0 ? duraciones.reduce((a,b) => a+b, 0) / duraciones.length : 0;
+
+  const kpis = [
+    { label: 'Total servicios', val: totalSvc, color: 'var(--green)' },
+    { label: 'Cobrados', val: `${cobrados}/${totalSvc}`, color: '#22c55e' },
+    { label: 'Pendientes', val: totalSvc - cobrados, color: '#f87171' },
+    { label: 'Facturado', val: '$' + facturacion.toLocaleString('es-AR'), color: '#f5a623' },
+    { label: 'Duración promedio', val: promDur > 0 ? minutosAStr(promDur) : '—', color: '#60a5fa' },
+  ];
+  document.getElementById('analytics_kpis').innerHTML = kpis.map(k => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+      <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${k.label}</div>
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;color:${k.color};">${k.val}</div>
+    </div>`).join('');
+
+  // ── GRÁFICOS XY QUÍMICOS (por tipo de unidad) ──
+  const LIQUIDOS = ['ml','lt'];
+  const SOLIDOS  = ['gr','kg'];
+  const UNIDADES_CONT = ['unid.'];
+  renderGraficoQuimicosFiltrado(servicios, LIQUIDOS, 'analytics_chart_liquidos', 'analytics_leyenda_liquidos');
+  renderGraficoQuimicosFiltrado(servicios, SOLIDOS,  'analytics_chart_solidos',  'analytics_leyenda_solidos');
+  renderGraficoQuimicosFiltrado(servicios, UNIDADES_CONT, 'analytics_chart_unidades', 'analytics_leyenda_unidades');
+
+  // ── TIEMPO PROMEDIO POR TÉCNICO ──
+  const porTecnico = {};
+  servicios.forEach(s => {
+    const t = s.tecnico || 'Sin nombre';
+    if (!porTecnico[t]) porTecnico[t] = { min: 0, count: 0, svcs: 0 };
+    const m = duracionAMinutos(s.duracion);
+    if (m > 0) { porTecnico[t].min += m; porTecnico[t].count++; }
+    porTecnico[t].svcs++;
+  });
+  const maxMin = Math.max(...Object.values(porTecnico).map(t => t.count > 0 ? t.min/t.count : 0), 1);
+  document.getElementById('analytics_tiempo_tecnico').innerHTML = Object.entries(porTecnico)
+    .sort((a,b) => (b[1].count>0?b[1].min/b[1].count:0) - (a[1].count>0?a[1].min/a[1].count:0))
+    .map(([nombre, d]) => {
+      const prom = d.count > 0 ? d.min/d.count : 0;
+      const pct = Math.max(4, (prom/maxMin)*100);
+      return `<div class="bar-row">
+        <div class="bar-label" title="${nombre}">${nombre}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#3b82f6,#60a5fa);">
+            <span class="bar-val">${prom > 0 ? minutosAStr(prom) : '—'}</span>
+          </div>
+        </div>
+        <div class="bar-total" style="font-size:0.7rem;">${d.svcs} svc</div>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:0.85rem;">Sin datos</div>';
+
+  // ── RANKING SERVICIOS ──
+  const maxSvcs = Math.max(...Object.values(porTecnico).map(t => t.svcs), 1);
+  document.getElementById('analytics_ranking').innerHTML = Object.entries(porTecnico)
+    .sort((a,b) => b[1].svcs - a[1].svcs)
+    .map(([nombre, d], i) => {
+      const pct = Math.max(4, (d.svcs/maxSvcs)*100);
+      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+      return `<div class="bar-row">
+        <div class="bar-label">${medal} ${nombre}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#1a6b2f,#22c55e);">
+            <span class="bar-val">${d.svcs}</span>
+          </div>
+        </div>
+        <div class="bar-total">${d.svcs} svc</div>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:0.85rem;">Sin datos</div>';
+
+  // ── TIPOS DE SERVICIO ──
+  const porTipo = {};
+  servicios.forEach(s => { if (s.tipoServicio) porTipo[s.tipoServicio] = (porTipo[s.tipoServicio]||0) + 1; });
+  const maxTipo = Math.max(...Object.values(porTipo), 1);
+  const tipoColors = {'Preventivo DD':'#3b82f6','Cucarachas Chicas':'#a855f7','Cucaracha Americana':'#8b5cf6','Hormigas Rojas':'#f97316','Hormigas Podadoras':'#22c55e','Hormigas Carpinteras':'#84cc16','Roedores':'#f59e0b','Otros':'#6b7280'};
+  document.getElementById('analytics_tipos').innerHTML = Object.entries(porTipo)
+    .sort((a,b) => b[1]-a[1])
+    .map(([tipo, cnt]) => {
+      const pct = Math.max(4, (cnt/maxTipo)*100);
+      const col = tipoColors[tipo] || '#6b7280';
+      return `<div class="bar-row">
+        <div class="bar-label" title="${tipo}">${tipo}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:${col};">
+            <span class="bar-val">${cnt}</span>
+          </div>
+        </div>
+        <div class="bar-total">${cnt} svc</div>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:0.85rem;">Sin datos de tipo de servicio</div>';
+
+  // ── GRADUACIÓN DE PLAGA ──
+  const porGrad = { Nula: 0, Baja: 0, Media: 0, Alta: 0 };
+  servicios.forEach(s => { if (s.graduacionPlaga && porGrad[s.graduacionPlaga] !== undefined) porGrad[s.graduacionPlaga]++; });
+  const totalGrad = Object.values(porGrad).reduce((a,b) => a+b, 0) || 1;
+  const gradColors = { Nula: '#22c55e', Baja: '#84cc16', Media: '#f59e0b', Alta: '#ef4444' };
+  const gradEmoji  = { Nula: '🟢', Baja: '🟡', Media: '🟠', Alta: '🔴' };
+  document.getElementById('analytics_graduacion').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+      ${Object.entries(porGrad).map(([g, cnt]) => `
+        <div style="flex:1;min-width:80px;background:var(--surface2);border-radius:10px;padding:12px;text-align:center;border:1px solid ${gradColors[g]}33;">
+          <div style="font-size:1.4rem;">${gradEmoji[g]}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:800;color:${gradColors[g]};">${cnt}</div>
+          <div style="font-size:0.7rem;color:var(--muted);">${g}</div>
+          <div style="font-size:0.68rem;color:${gradColors[g]};">${Math.round(cnt/totalGrad*100)}%</div>
+        </div>`).join('')}
+    </div>
+    <div style="background:var(--surface2);border-radius:8px;height:12px;overflow:hidden;display:flex;">
+      ${Object.entries(porGrad).map(([g, cnt]) => cnt > 0 ? `<div style="width:${Math.round(cnt/totalGrad*100)}%;background:${gradColors[g]};"></div>` : '').join('')}
+    </div>`;
+
+  // ── FACTURACIÓN SEMANAL ──
+  const porSemana = {};
+  servicios.forEach(s => {
+    if (!s.timestamp) return;
+    const d = new Date(s.timestamp);
+    const lunes = new Date(d); lunes.setDate(d.getDate() - (d.getDay()===0?6:d.getDay()-1));
+    const key = lunes.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+    if (!porSemana[key]) porSemana[key] = 0;
+    porSemana[key] += parseFloat(s.monto)||0;
+  });
+  const maxFact = Math.max(...Object.values(porSemana), 1);
+  document.getElementById('analytics_facturacion').innerHTML = Object.entries(porSemana)
+    .slice(-8)
+    .map(([sem, total]) => {
+      const pct = Math.max(4, (total/maxFact)*100);
+      return `<div class="bar-row">
+        <div class="bar-label">Sem ${sem}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${pct}%;background:linear-gradient(90deg,#f5a623,#fbbf24);">
+            <span class="bar-val" style="color:#1a1a1a;">$${total.toLocaleString('es-AR')}</span>
+          </div>
+        </div>
+        <div class="bar-total" style="font-size:0.7rem;">total</div>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:0.85rem;">Sin datos de facturación</div>';
+
+  // ── HEATMAP DÍAS ──
+  const diasNombres = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const porDia = [0,0,0,0,0,0,0];
+  servicios.forEach(s => { if (s.timestamp) porDia[new Date(s.timestamp).getDay()]++; });
+  const maxDia = Math.max(...porDia, 1);
+  document.getElementById('analytics_heatmap').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;">
+      ${diasNombres.map((d,i) => {
+        const intensity = porDia[i]/maxDia;
+        const bg = intensity > 0.7 ? '#1a6b2f' : intensity > 0.4 ? '#2ea04d' : intensity > 0.1 ? '#22c55e' : 'var(--surface2)';
+        const textColor = intensity > 0.1 ? 'white' : 'var(--muted)';
+        return `<div style="text-align:center;border-radius:8px;padding:10px 4px;background:${bg};transition:all .3s;">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.7rem;font-weight:700;color:${textColor};opacity:0.8;">${d}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:${textColor};">${porDia[i]}</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-top:8px;text-align:center;">Número de servicios por día de la semana</div>`;
+}
+
+function renderGraficoQuimicosFiltrado(servicios, unidadesFiltro, containerId, leyendaId) {
+  const container = document.getElementById(containerId);
+  const leyenda   = document.getElementById(leyendaId);
+  if (!container) return;
+
+  // Normalizar a unidad base: cc→cc, ml→ml, lt→lt*1000, gr→gr, kg→kg*1000
+  function normalizarCant(cant, unit, litros) {
+    if (unit === 'ml' && litros > 0) return cant * litros; // ml/L × litros = total ml
+    if (unit === 'lt') return cant * 1000; // lt → ml
+    if (unit === 'kg') return cant * 1000; // kg → gr
+    return cant;
+  }
+  function unidadLabel(unidadesFiltro) {
+    if (unidadesFiltro.includes('ml')) return 'ml/lt';
+    if (unidadesFiltro.includes('gr')) return 'gr';
+    return 'unid.';
+  }
+
+  // Agrupar por semana y por químico (solo unidades del filtro)
+  const semanas = {};
+  const quimicosSet = new Set();
+
+  servicios.forEach(s => {
+    if (!s.timestamp) return;
+    const d = new Date(s.timestamp);
+    const lunes = new Date(d); lunes.setDate(d.getDate() - (d.getDay()===0?6:d.getDay()-1));
+    const key = lunes.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit'});
+    if (!semanas[key]) semanas[key] = {};
+    (s.quimicos||[]).forEach(q => {
+      if (!q.prod || !unidadesFiltro.includes(q.unit||'')) return;
+      quimicosSet.add(q.prod);
+      const litrosQ = parseFloat(q.litros) || parseFloat(s.litros) || 0;
+      const cant = normalizarCant(parseFloat(q.cant)||0, q.unit, litrosQ);
+      semanas[key][q.prod] = (semanas[key][q.prod]||0) + cant;
+    });
+  });
+
+  const semanasArr = Object.keys(semanas).sort().slice(-12);
+  const quimicosArr = [...quimicosSet].slice(0, 8);
+
+  if (semanasArr.length === 0 || quimicosArr.length === 0) {
+    container.innerHTML = `<div style="color:var(--muted);font-size:0.82rem;padding:16px 0;">Sin datos para este tipo de unidad en el período</div>`;
+    if (leyenda) leyenda.innerHTML = '';
+    return;
+  }
+
+  let maxVal = 0;
+  semanasArr.forEach(s => quimicosArr.forEach(q => { if ((semanas[s]||{})[q] > maxVal) maxVal = semanas[s][q]; }));
+  maxVal = maxVal || 1;
+
+  const HEIGHT = 140, WIDTH_PER_SEM = 52, PADDING = 36;
+  const totalW = semanasArr.length * WIDTH_PER_SEM + PADDING;
+
+  let svg = `<svg viewBox="0 0 ${totalW} ${HEIGHT+45}" width="${totalW}" height="${HEIGHT+45}" style="min-width:${totalW}px;display:block;">`;
+  // Grid + Y labels
+  for (let i = 0; i <= 4; i++) {
+    const y = 10 + HEIGHT * (1 - i/4);
+    svg += `<line x1="${PADDING}" y1="${y}" x2="${totalW}" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+    svg += `<text x="${PADDING-5}" y="${y+4}" font-size="8" fill="#8b92a5" text-anchor="end">${Math.round(maxVal*i/4)}</text>`;
+  }
+  // Unit label
+  svg += `<text x="8" y="${HEIGHT/2+10}" font-size="7" fill="#8b92a5" text-anchor="middle" transform="rotate(-90,8,${HEIGHT/2+10})">${unidadLabel(unidadesFiltro)}</text>`;
+
+  quimicosArr.forEach((q, qi) => {
+    const color = COLORES_QUIMICOS[qi % COLORES_QUIMICOS.length];
+    const pts = semanasArr.map((sem, si) => {
+      const val = (semanas[sem]||{})[q] || 0;
+      return `${PADDING + si*WIDTH_PER_SEM + WIDTH_PER_SEM/2},${10 + HEIGHT*(1 - val/maxVal)}`;
+    }).join(' ');
+    svg += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>`;
+    semanasArr.forEach((sem, si) => {
+      const val = (semanas[sem]||{})[q] || 0;
+      if (val > 0) {
+        const cx = PADDING + si*WIDTH_PER_SEM + WIDTH_PER_SEM/2;
+        const cy = 10 + HEIGHT*(1 - val/maxVal);
+        svg += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${color}" stroke="#1a1d27" stroke-width="1.5"/>`;
+        svg += `<title>${q}: ${val.toFixed(1)} (${sem})</title>`;
+      }
+    });
+  });
+  // X labels
+  semanasArr.forEach((sem, si) => {
+    svg += `<text x="${PADDING + si*WIDTH_PER_SEM + WIDTH_PER_SEM/2}" y="${HEIGHT+30}" font-size="8" fill="#8b92a5" text-anchor="middle">${sem}</text>`;
+  });
+  svg += '</svg>';
+  container.innerHTML = svg;
+
+  if (leyenda) leyenda.innerHTML = quimicosArr.map((q, qi) => `
+    <div style="display:flex;align-items:center;gap:5px;font-size:0.72rem;color:var(--muted);">
+      <div style="width:16px;height:3px;border-radius:2px;background:${COLORES_QUIMICOS[qi%COLORES_QUIMICOS.length]};"></div>${q}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// CALENDARIO — almacena datos globalmente
+// ══════════════════════════════════════════
+let allServicios = [];
+
+function navMes(dir) {
+  calMes += dir;
+  if (calMes > 11) { calMes = 0; calAnio++; }
+  if (calMes < 0)  { calMes = 11; calAnio--; }
+  renderCalendario();
+}
+
+function getSemanaLabel(d, anio, mes) {
+  // Calcular lunes y domingo de la semana
+  const dow = d.getDay(); // 0=dom
+  const lunes = new Date(d); lunes.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const fmt = (dt) => dt.getDate() + ' ' + meses[dt.getMonth()];
+  // Calcular número de semana del mes
+  const inicioMes = new Date(anio, mes, 1);
+  const semNum = Math.ceil((d.getDate() + ((inicioMes.getDay()||7)-1)) / 7);
+  return `Semana ${semNum} · ${fmt(lunes)} al ${fmt(domingo)}`;
+}
+
+function renderCalendario() {
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('mesLabel').textContent = meses[calMes] + ' ' + calAnio;
+
+  const lista = document.getElementById('calendarioLista');
+  if (!lista) return;
+
+  const delMes = allServicios.filter(s => {
+    if (!s.timestamp) return false;
+    const d = new Date(s.timestamp);
+    return d.getMonth() === calMes && d.getFullYear() === calAnio;
+  }).sort((a, b) => b.timestamp - a.timestamp); // MÁS RECIENTE PRIMERO
+
+  if (delMes.length === 0) {
+    lista.innerHTML = `<div class="empty" style="padding:40px 0;"><div class="empty-icon">📅</div><div class="empty-title">Sin servicios en este mes</div></div>`;
+    return;
+  }
+
+  // Agrupar por semana (más reciente primero)
+  const semanas = {};
+  const semOrder = [];
+  delMes.forEach(s => {
+    const d = new Date(s.timestamp);
+    const key = getSemanaLabel(d, calAnio, calMes);
+    if (!semanas[key]) { semanas[key] = []; semOrder.push(key); }
+    semanas[key].push(s);
+  });
+
+  const diasSemana = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  let html = '';
+
+  // Semanas únicas en orden
+  const semanasUnicas = [...new Set(semOrder)];
+
+  semanasUnicas.forEach((semana, si) => {
+    const servicios = semanas[semana];
+    const semId = 'sem_' + calMes + '_' + si;
+    const abierta = si === 0; // Primera (más reciente) abierta por defecto
+    const abonados = servicios.filter(s => s.abono).length;
+    html += `
+      <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;">
+        <div onclick="toggleSemana('${semId}')" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;background:var(--surface2);">
+          <div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.9rem;font-weight:800;color:var(--text);">📅 ${semana}</div>
+            <div style="font-size:0.72rem;color:var(--muted);margin-top:2px;">${servicios.length} servicios · ${abonados} cobrados · ${servicios.length - abonados} pendientes</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:0.75rem;font-weight:700;color:#22c55e;">✅ ${abonados}</span>
+            <span style="font-size:0.75rem;font-weight:700;color:#f87171;">❌ ${servicios.length - abonados}</span>
+            <span id="${semId}_arrow" style="color:var(--muted);transition:transform .2s;${abierta ? 'transform:rotate(180deg)' : ''}">▼</span>
+          </div>
+        </div>
+        <div id="${semId}" style="display:${abierta ? 'block' : 'none'};padding:8px 12px 12px;">`;
+    servicios.forEach(s => {
+      const d = new Date(s.timestamp);
+      const diaStr = diasSemana[d.getDay()] + ' ' + d.getDate();
+      const abono = s.abono === true;
+      const cobrado = abono
+        ? `✅ ${s.quienCobro || ''}${s.monto ? ' $' + Number(s.monto).toLocaleString('es-AR') : ''}`
+        : '❌ Pendiente';
+      html += `
+          <div class="cal-item ${abono ? 'abono' : 'no-abono'}" style="margin-top:6px;">
+            <div class="cal-dot ${abono ? 'verde' : 'rojo'}"></div>
+            <div class="cal-fecha">${diaStr}</div>
+            <div style="flex:1;">
+              <div class="cal-cliente">${s.cliente || '—'}</div>
+              <div class="cal-tecnico">👷 ${s.tecnico || '—'}</div>
+            </div>
+            <div class="cal-cobro ${abono ? 'verde' : 'rojo'}" style="text-align:right;font-size:0.78rem;">${cobrado}</div>
+          </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  lista.innerHTML = html;
+}
+
+function toggleSemana(id) {
+  const el = document.getElementById(id);
+  const arrow = document.getElementById(id + '_arrow');
+  const open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+// ══════════════════════════════════════════
+// RENDER SERVICIOS
+// ══════════════════════════════════════════
+window.renderServicios = function(data) {
+  const lista = document.getElementById('serviciosList');
+  const entries = Object.values(data);
+  // Store globally for calendar
+  allServicios = entries;
+
+  // Contar servicios de HOY correctamente
+  const hoy = new Date();
+  const hoyStr = hoy.toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+  serviciosHoy = entries.filter(s => {
+    if (s.timestamp) {
+      const d = new Date(s.timestamp);
+      return d.toDateString() === hoy.toDateString();
+    }
+    return s.fecha === hoyStr;
+  }).length;
+
+  // Set today as default filter date if no filter set
+  const filtroFechaEl = document.getElementById('filtro_fecha');
+  if (filtroFechaEl && !filtroFechaEl.value) {
+    filtroFechaEl.value = hoy.toISOString().split('T')[0];
+  }
+
+  if (entries.length === 0) {
+    lista.innerHTML = `<div class="empty" style="padding:40px 0;">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Sin servicios registrados</div>
+      <div class="empty-sub">Los servicios aparecerán aquí cuando los técnicos envíen la ficha de cierre</div>
+    </div>`;
+    renderChart({});
+    return;
+  }
+
+  // Render con filtros actuales
+  filtrarServiciosPorFecha();
+
+  // Build list for map iteration (used below for consumo chart)
+  entries.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+  lista.innerHTML = entries.map((s, idx) => {
+    const ts = s.timestamp ? new Date(s.timestamp) : null;
+    const fechaHora = ts ? ts.toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : s.fecha || '—';
+    // Usar q.litros (por caldo) si existe, sino s.litros (compat. antigua)
+    const quimicosHtml = (s.quimicos || []).map(q => {
+      let txt = q.prod || '';
+      const litrosQ = parseFloat(q.litros) || parseFloat(s.litros) || 0;
+      const caldoTag = q.caldo > 1 ? ` <span style="font-size:0.65rem;background:rgba(59,130,246,0.2);color:#60a5fa;padding:1px 5px;border-radius:4px;">C${q.caldo}</span>` : '';
+      if (q.unit === 'ml' && litrosQ > 0 && q.cant) {
+        txt += `: <strong>${(q.cant * litrosQ).toFixed(1)} ml total</strong> (${q.cant} ml/L × ${litrosQ}L)${caldoTag}`;
+      } else if (q.cant) {
+        txt += `: <strong>${q.cant} ${q.unit||''}</strong>${caldoTag}`;
+      }
+      return `<div class="quimico-linea">🧪 ${txt}</div>`;
+    }).join('') || '<div class="quimico-linea" style="color:var(--muted)">Sin registros</div>';
+
+    return `
+    <div class="servicio-card">
+      <div class="servicio-head" onclick="toggleSvcDetail(${idx})">
+        <div>
+          <div class="svc-cliente">🏢 ${s.cliente || '—'}</div>
+          <div class="svc-meta">👷 ${s.tecnico || '—'} · 🕐 ${fechaHora} · ⏱ ${s.duracion || '—'}</div>
+          <div class="svc-badges">
+            ${s.abono === true
+              ? `<span class="svc-badge" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#22c55e;">✅ Abonó${s.quienCobro ? ' — ' + s.quienCobro : ''}</span>`
+              : (s.abono === false ? `<span class="svc-badge" style="background:rgba(204,26,26,0.12);border-color:rgba(204,26,26,0.3);color:#f87171;">❌ No abonó</span>` : '')}
+            ${s.pago ? `<span class="svc-badge">💳 ${s.pago}</span>` : ''}
+            ${s.monto ? `<span class="svc-badge">💰 $${Number(s.monto).toLocaleString('es-AR')}</span>` : ''}
+            ${(s.caldos && s.caldos.length > 0)
+              ? s.caldos.map(c => c.litros > 0 ? `<span class="svc-badge" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.3);color:#f5a623;">🧴 C${c.caldoNum}: ${c.litros}L</span>` : '').join('')
+              : (s.litros ? `<span class="svc-badge" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.3);color:#f5a623;">🧴 ${s.litros}L caldo</span>` : '')}
+            ${s.editado ? `<span class="svc-badge editado">✏️ Editado</span>` : ''}
+          </div>
+        </div>
+        <span class="svc-arrow" id="svc-arrow-${idx}">▼</span>
+      </div>
+      <div class="svc-detail" id="svc-detail-${idx}">
+        <div class="svc-detail-grid">
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Descripción del servicio</div>
+            <div class="svc-detail-val">${s.descripcion || '—'}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Sugerencias al cliente</div>
+            <div class="svc-detail-val">${s.sugerencias || '—'}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Químicos utilizados</div>
+            <div style="margin-top:4px;">${quimicosHtml}</div>
+          </div>
+          <!-- COBRO EDITABLE -->
+          <div class="svc-detail-item svc-detail-full" style="background:${s.abono ? 'rgba(34,197,94,0.08)' : 'rgba(204,26,26,0.08)'};border:1px solid ${s.abono ? 'rgba(34,197,94,0.25)' : 'rgba(204,26,26,0.25)'};">
+            <div class="svc-detail-label" style="margin-bottom:8px;">Estado de cobro</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:0.9rem;font-weight:700;color:${s.abono ? '#22c55e' : '#f87171'};">
+                ${s.abono ? '✅ Abonó' + (s.quienCobro ? ' — ' + s.quienCobro : '') + (s.monto ? ' · $' + Number(s.monto).toLocaleString('es-AR') : '') : '❌ No abonó'}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button onclick="abrirEditCobro('${s.id}', ${idx})" style="padding:6px 12px;background:#1a6b2f;border:none;border-radius:6px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">
+                  💰 Cobro
+                </button>
+                <button onclick="abrirEditServicio('${s.id}')" style="padding:6px 12px;background:#1a4fa0;border:none;border-radius:6px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">
+                  ✏️ Editar
+                </button>
+                <button onclick="eliminarServicio('${s.id}', '${(s.cliente||'').replace(/'/g,'')}', '${s.fecha||''}')" style="padding:6px 12px;background:rgba(204,26,26,0.15);border:1px solid rgba(204,26,26,0.4);border-radius:6px;color:#f87171;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">
+                  🗑️ Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Calcular consumo para gráfico
+  const consumo = {};
+  entries.forEach(s => {
+    (s.quimicos || []).forEach(q => {
+      if (!q.prod) return;
+      const key = q.prod;
+      if (!consumo[key]) consumo[key] = { ml: 0, otros: 0, unit: q.unit };
+      const cant = parseFloat(q.cant) || 0;
+      const litrosQ2 = parseFloat(q.litros) || parseFloat(s.litros) || 0;
+      if (q.unit === 'ml' && litrosQ2 > 0) {
+        consumo[key].cc += cant * litrosQ2;
+      } else {
+        consumo[key].otros += cant;
+        consumo[key].unit = q.unit;
+      }
+    });
+  });
+  // Use recalcConsumo to respect current mode and fix multi-caldo litros
+  if (window.recalcConsumo) recalcConsumo();
+  else renderChart(consumo);
+
+  // Actualizar contador de servicios de hoy en el header
+  refreshStatHoy();
+};
+
+function toggleSvcDetail(idx) {
+  const detail = document.getElementById('svc-detail-' + idx);
+  const arrow  = document.getElementById('svc-arrow-' + idx);
+  const open = detail.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+}
+
+// ══════════════════════════════════════════
+// FILTRO Y CALENDARIO DE SERVICIOS
+// ══════════════════════════════════════════
+function buildServicioCard(s, idx) {
+  const ts = s.timestamp ? new Date(s.timestamp) : null;
+  const fechaHora = ts ? ts.toLocaleString('es-AR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : s.fecha || '—';
+  const litrosQ = parseFloat(s.litros) || 0;
+  const quimicosHtml2 = (s.quimicos || []).map(q => {
+    let txt = q.prod || '';
+    const lq = parseFloat(q.litros) || litrosQ;
+    const caldoTag = q.caldo > 1 ? ` <span style="font-size:0.65rem;background:rgba(59,130,246,0.2);color:#60a5fa;padding:1px 5px;border-radius:4px;">C${q.caldo}</span>` : '';
+    if (q.unit === 'ml' && lq > 0 && q.cant) {
+      txt += `: <strong>${(q.cant * lq).toFixed(1)} ml total</strong> (${q.cant} ml/L × ${lq}L)${caldoTag}`;
+    } else if (q.cant) {
+      txt += `: <strong>${q.cant} ${q.unit||''}</strong>${caldoTag}`;
+    }
+    return `<div class="quimico-linea">🧪 ${txt}</div>`;
+  }).join('') || '<div class="quimico-linea" style="color:var(--muted)">Sin registros</div>';
+
+  const caldosBadges = (s.caldos && s.caldos.length > 0)
+    ? s.caldos.map(c => c.litros > 0 ? `<span class="svc-badge" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.3);color:#f5a623;">🧴 C${c.caldoNum}: ${c.litros}L</span>` : '').join('')
+    : (s.litros ? `<span class="svc-badge" style="background:rgba(245,166,35,0.12);border-color:rgba(245,166,35,0.3);color:#f5a623;">🧴 ${s.litros}L</span>` : '');
+
+  return `
+    <div class="servicio-card">
+      <div class="servicio-head" onclick="toggleSvcDetail(${idx})">
+        <div>
+          <div class="svc-cliente">🏢 ${s.cliente || '—'}</div>
+          <div class="svc-meta">👷 ${s.tecnico || '—'} · 🕐 ${fechaHora} · ⏱ ${s.duracion || '—'}</div>
+          <div class="svc-badges">
+            ${s.tipoServicio ? `<span class="svc-badge" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#60a5fa;">🪲 ${s.tipoServicio}</span>` : ''}
+            ${s.graduacionPlaga ? `<span class="svc-badge">${s.graduacionPlaga === 'Alta' ? '🔴' : s.graduacionPlaga === 'Media' ? '🟠' : s.graduacionPlaga === 'Baja' ? '🟡' : '🟢'} ${s.graduacionPlaga}</span>` : ''}
+            ${s.abono === true
+              ? `<span class="svc-badge" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#22c55e;">✅ Cobró${s.quienCobro ? ' — ' + s.quienCobro : ''}</span>`
+              : (s.abono === false ? `<span class="svc-badge" style="background:rgba(204,26,26,0.12);border-color:rgba(204,26,26,0.3);color:#f87171;">❌ No abonó</span>` : '')}
+            ${s.pago ? `<span class="svc-badge">💳 ${s.pago}</span>` : ''}
+            ${s.monto ? `<span class="svc-badge">💰 $${Number(s.monto).toLocaleString('es-AR')}</span>` : ''}
+            ${caldosBadges}
+            ${s.editado || s.editadoEnPanel ? `<span class="svc-badge editado">✏️ Editado</span>` : ''}
+          </div>
+        </div>
+        <span class="svc-arrow" id="svc-arrow-${idx}">▼</span>
+      </div>
+      <div class="svc-detail" id="svc-detail-${idx}">
+        <div class="svc-detail-grid">
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Descripción del servicio</div>
+            <div class="svc-detail-val">${s.descripcion || '—'}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Sugerencias al cliente</div>
+            <div class="svc-detail-val">${s.sugerencias || '—'}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full">
+            <div class="svc-detail-label">Químicos utilizados</div>
+            <div style="margin-top:4px;">${quimicosHtml2}</div>
+          </div>
+          <div class="svc-detail-item svc-detail-full" style="background:${s.abono ? 'rgba(34,197,94,0.08)' : 'rgba(204,26,26,0.08)'};border:1px solid ${s.abono ? 'rgba(34,197,94,0.25)' : 'rgba(204,26,26,0.25)'};">
+            <div class="svc-detail-label" style="margin-bottom:8px;">Estado de cobro</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+              <div style="font-size:0.9rem;font-weight:700;color:${s.abono ? '#22c55e' : '#f87171'};">
+                ${s.abono ? '✅ Abonó' + (s.quienCobro ? ' — ' + s.quienCobro : '') + (s.monto ? ' · $' + Number(s.monto).toLocaleString('es-AR') : '') : '❌ No abonó'}
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button onclick="abrirEditCobro('${s.id}', ${idx})" style="padding:6px 12px;background:#1a6b2f;border:none;border-radius:6px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">💰 Cobro</button>
+                <button onclick="abrirEditServicio('${s.id}')" style="padding:6px 12px;background:#1a4fa0;border:none;border-radius:6px;color:white;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">✏️ Editar</button>
+                <button onclick="eliminarServicio('${s.id}', '${(s.cliente||'').replace(/'/g,'')}', '${s.fecha||''}')" style="padding:6px 12px;background:rgba(204,26,26,0.15);border:1px solid rgba(204,26,26,0.4);border-radius:6px;color:#f87171;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function filtrarServiciosPorFecha() {
+  const lista = document.getElementById('serviciosList');
+  if (!lista) return;
+
+  const fechaFiltro = document.getElementById('filtro_fecha')?.value || '';
+  const tecnicoFiltro = (document.getElementById('filtro_tecnico')?.value || '').toLowerCase();
+  const tipoFiltro = document.getElementById('filtro_tipo')?.value || '';
+  const resumenDiv = document.getElementById('resumen_dia');
+
+  let filtrados = [...allServicios].sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
+
+  // Filtrar por fecha
+  if (fechaFiltro) {
+    filtrados = filtrados.filter(s => {
+      if (!s.timestamp) return false;
+      const d = new Date(s.timestamp);
+      return d.toISOString().split('T')[0] === fechaFiltro;
+    });
+  }
+  // Filtrar por técnico
+  if (tecnicoFiltro) {
+    filtrados = filtrados.filter(s => (s.tecnico||'').toLowerCase().includes(tecnicoFiltro));
+  }
+  // Filtrar por tipo
+  if (tipoFiltro) {
+    filtrados = filtrados.filter(s => s.tipoServicio === tipoFiltro);
+  }
+
+  if (filtrados.length === 0) {
+    lista.innerHTML = `<div class="empty" style="padding:30px 0;"><div class="empty-icon">📋</div><div class="empty-title">Sin servicios para los filtros seleccionados</div></div>`;
+    if (resumenDiv) resumenDiv.style.display = 'none';
+    return;
+  }
+
+  // Resumen del día
+  if (resumenDiv && fechaFiltro) {
+    const cobrados = filtrados.filter(s => s.abono).length;
+    const facturado = filtrados.reduce((sum,s) => sum + (parseFloat(s.monto)||0), 0);
+    resumenDiv.style.display = 'block';
+    resumenDiv.innerHTML = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:0.9rem;font-weight:800;color:var(--green);">📅 ${new Date(fechaFiltro+'T12:00').toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'})}</span>
+        <span style="font-size:0.82rem;color:var(--text);">📋 ${filtrados.length} servicios</span>
+        <span style="font-size:0.82rem;color:#22c55e;">✅ ${cobrados} cobrados</span>
+        <span style="font-size:0.82rem;color:#f87171;">❌ ${filtrados.length-cobrados} pendientes</span>
+        ${facturado > 0 ? `<span style="font-size:0.82rem;color:#f5a623;">💰 $${facturado.toLocaleString('es-AR')}</span>` : ''}
+      </div>`;
+  } else if (resumenDiv) {
+    resumenDiv.style.display = 'none';
+  }
+
+  lista.innerHTML = filtrados.map((s, idx) => buildServicioCard(s, idx)).join('');
+}
+
+function limpiarFiltros() {
+  const fd = document.getElementById('filtro_fecha');
+  const ft = document.getElementById('filtro_tecnico');
+  const fti = document.getElementById('filtro_tipo');
+  if (fd) fd.value = '';
+  if (ft) ft.value = '';
+  if (fti) fti.value = '';
+  filtrarServiciosPorFecha();
+}
+
+// ══════════════════════════════════════════
+// CONSUMO TAB MODE
+// ══════════════════════════════════════════
+let consModo = 'general';
+let consMes  = new Date().getMonth();
+let consAnio = new Date().getFullYear();
+const MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+function switchConsumoMode(mode) {
+  consModo = mode;
+  const isGeneral = mode === 'general';
+  document.getElementById('cons_btn_general').style.cssText = isGeneral
+    ? 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--green);border:none;color:white;'
+    : 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--muted);';
+  document.getElementById('cons_btn_mes').style.cssText = !isGeneral
+    ? 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:#1a4fa0;border:none;color:white;'
+    : 'padding:7px 16px;border-radius:8px;font-family:"Barlow Condensed",sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;background:var(--surface2);border:1px solid var(--border);color:var(--muted);';
+  const nav = document.getElementById('cons_mes_nav');
+  nav.style.display = isGeneral ? 'none' : 'flex';
+  if (!isGeneral) updateConsMesLabel();
+  recalcConsumo();
+}
+
+function navConsMes(dir) {
+  consMes += dir;
+  if (consMes > 11) { consMes = 0; consAnio++; }
+  if (consMes < 0)  { consMes = 11; consAnio--; }
+  updateConsMesLabel();
+  recalcConsumo();
+}
+
+function updateConsMesLabel() {
+  const lbl = document.getElementById('cons_mes_label');
+  if (lbl) lbl.textContent = MESES_NOMBRES[consMes] + ' ' + consAnio;
+}
+
+function recalcConsumo() {
+  // Filter servicios by mode
+  let serviciosConsumo = allServicios;
+  if (consModo === 'mes') {
+    serviciosConsumo = allServicios.filter(s => {
+      if (!s.timestamp) return false;
+      const d = new Date(s.timestamp);
+      return d.getMonth() === consMes && d.getFullYear() === consAnio;
+    });
+  }
+  // Recalculate consumo with correct per-product litros
+  const consumo = {};
+  serviciosConsumo.forEach(s => {
+    (s.quimicos || []).forEach(q => {
+      if (!q.prod) return;
+      const key = q.prod;
+      if (!consumo[key]) consumo[key] = { ml: 0, otros: 0, unit: q.unit };
+      const cant = parseFloat(q.cant) || 0;
+      const litrosQ = parseFloat(q.litros) || parseFloat(s.litros) || 0;
+      if (q.unit === 'ml' && litrosQ > 0) {
+        consumo[key].ml = (consumo[key].ml||0) + cant * litrosQ;
+      } else {
+        consumo[key].otros += cant;
+        consumo[key].unit = q.unit;
+      }
+    });
+  });
+  renderChart(consumo);
+}
+
+// ══════════════════════════════════════════
+// GRÁFICO DE CONSUMO
+// ══════════════════════════════════════════
+function renderChart(consumo) {
+  const container = document.getElementById('chartQuimicos');
+  const leyenda   = document.getElementById('chartLeyenda');
+  const keys = Object.keys(consumo);
+
+  if (keys.length === 0) {
+    container.innerHTML = `<div class="empty" style="padding:30px 0;"><div class="empty-icon" style="font-size:2rem;">🧪</div><div class="empty-title" style="font-size:0.95rem;">Sin datos de consumo aún</div></div>`;
+    leyenda.innerHTML = '';
+    return;
+  }
+
+  // Calcular totales para escala
+  const totales = keys.map(k => {
+    const c = consumo[k];
+    return { key: k, val: c.ml > 0 ? c.ml : c.otros, unit: c.ml > 0 ? 'ml total' : (c.unit || '') };
+  }).sort((a, b) => b.val - a.val);
+
+  const max = totales[0].val;
+
+  container.innerHTML = `<div class="chart-container">
+    ${totales.map((t, i) => {
+      const pct = max > 0 ? Math.max(4, (t.val / max) * 100) : 4;
+      const isRed = ['Fipronil','Demoledor','Cipermetrina','Troya'].includes(t.key);
+      return `<div class="bar-row">
+        <div class="bar-label" title="${t.key}">${t.key}</div>
+        <div class="bar-track">
+          <div class="bar-fill ${isRed ? 'red' : ''}" style="width:${pct}%">
+            <span class="bar-val">${t.val % 1 === 0 ? t.val : t.val.toFixed(1)}</span>
+          </div>
+        </div>
+        <div class="bar-total">${t.unit}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  leyenda.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--muted);">
+      <div style="width:14px;height:10px;border-radius:3px;background:linear-gradient(90deg,#1a6b2f,#2ea04d)"></div> Insecticidas / otros
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.72rem;color:var(--muted);">
+      <div style="width:14px;height:10px;border-radius:3px;background:linear-gradient(90deg,#cc1a1a,#e85555)"></div> Alta toxicidad
+    </div>
+    <div style="font-size:0.72rem;color:var(--muted);">📊 Consumo acumulado — todos los servicios</div>`;
+}
+
+// ══════════════════════════════════════════
+// STOCK MANAGEMENT
+// ══════════════════════════════════════════
+
+// Stock inicial del Excel
+// Fecha desde la cual se cuentan los servicios para el stock
+// Cambiá esta fecha al día en que cargaste el stock inicial del Excel
+const STOCK_FECHA_CORTE = '2026-04-20'; // DD/MM/YYYY → modificar según cuando se cargó el stock
+
+const STOCK_INICIAL = [
+  { nombre: 'Demoledor',         stock: 6,    unidad: 'lt',   minimo: 1   },
+  { nombre: 'Deltametrina',      stock: 6,    unidad: 'lt',   minimo: 1   },
+  { nombre: 'Chemofog',          stock: 11,   unidad: 'unid', minimo: 2   },
+  { nombre: 'DEPE',              stock: 6,    unidad: 'lt',   minimo: 1   },
+  { nombre: 'Ultra Block',       stock: 2,    unidad: 'kg',   minimo: 1   },
+  { nombre: 'Fipronil',          stock: 1,    unidad: 'lt',   minimo: 0.3 },
+  { nombre: 'Starycide',         stock: 0.5,  unidad: 'lt',   minimo: 0.1 },
+  { nombre: 'Fipro Gel',         stock: 0.5,  unidad: 'kg',   minimo: 0.1 },
+  { nombre: 'Gel Roedores',      stock: 2,    unidad: 'kg',   minimo: 0.1 },
+  { nombre: 'Bandejas Cebaderas',stock: 20,   unidad: 'unid', minimo: 100 },
+  { nombre: 'Troya',             stock: 0.4,  unidad: 'kg',   minimo: 0.2 },
+  { nombre: 'Placa Pegamento',   stock: 8,    unidad: 'unid', minimo: 1   },
+  { nombre: 'Guantes',           stock: 50,   unidad: 'unid', minimo: 100 },
+];
+
+// Mapeo de nombres de químicos (app → stock)
+// Mapeo ampliado — incluye TODOS los productos de la app
+const QUIMICO_STOCK_MAP = {
+  'demoledor':           'Demoledor',
+  'deltametrina':        'Deltametrina',
+  'chemofog':            'Chemofog',
+  'depe':                'DEPE',
+  'ultra block':         'Ultra Block',
+  'fipronil':            'Fipronil',
+  'fipronil gel':        'Fipro Gel',
+  'fipro gel':           'Fipro Gel',
+  'apollo':              'Fipro Gel',       // Apollo = Fipronil Gel
+  'starycide':           'Starycide',
+  'staricyde':           'Starycide',
+  'gel roedores':        'Gel Roedores',
+  'bandejas cebaderas':  'Bandejas Cebaderas',
+  'troya':               'Troya',
+  'placa de pegamento':  'Placa Pegamento',
+  'placa pegamento':     'Placa Pegamento',
+  'guantes':             'Guantes',
+  'cipermetrina':        'Deltametrina',    // Mismo activo, mapear a deltametrina
+  'formix':              'Troya',           // Formix = Troya (similar)
+  'caldo':               null,              // No descontar caldo del stock
+  'otros':               null,
+};
+
+// Buscar nombre de stock por similitud si no está en el mapa
+function buscarStockNombre(prodNombre, stockData) {
+  const key = (prodNombre || '').toLowerCase().trim();
+  // 1. Buscar en mapa exacto
+  if (QUIMICO_STOCK_MAP.hasOwnProperty(key)) return QUIMICO_STOCK_MAP[key];
+  // 2. Buscar directamente en stockData (nombre exacto case-insensitive)
+  const stockKeys = Object.keys(stockData);
+  const directMatch = stockKeys.find(k => k.toLowerCase() === key);
+  if (directMatch) return directMatch;
+  // 3. Buscar si el nombre del producto contiene el nombre del stock o viceversa
+  const partialMatch = stockKeys.find(k =>
+    key.includes(k.toLowerCase()) || k.toLowerCase().includes(key)
+  );
+  return partialMatch || null;
+}
+
+// Stock vive en Firebase como fuente de verdad
+let stockDataCache = null;
+
+function getStockData() {
+  if (stockDataCache) return stockDataCache;
+  // Fallback a localStorage mientras Firebase carga
+  try {
+    const saved = localStorage.getItem('experts_stock_v2');
+    if (saved) {
+      stockDataCache = JSON.parse(saved);
+      return stockDataCache;
+    }
+  } catch(e) {}
+  // Primera vez: inicializar con stock del Excel
+  const data = {};
+  STOCK_INICIAL.forEach(p => { data[p.nombre] = { ...p, ingresos: [] }; });
+  saveStockData(data);
+  return data;
+}
+
+function saveStockData(data) {
+  stockDataCache = data;
+  localStorage.setItem('experts_stock_v2', JSON.stringify(data));
+  // Firebase es la fuente de verdad
+  if (_fbDb) {
+    _fbDb.ref('stock_v2').set(data)
+      .then(() => console.log('✅ Stock sincronizado con Firebase'))
+      .catch(e => console.warn('Stock sync error:', e));
+  }
+}
+
+// Escuchar cambios de stock en Firebase (cualquier dispositivo)
+function initStockListener() {
+  if (!_fbDb) return;
+  _fbDb.ref('stock_v2').on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      stockDataCache = data;
+      localStorage.setItem('experts_stock_v2', JSON.stringify(data));
+      // Re-renderizar si la pestaña stock está activa
+      const activeTab = document.querySelector('.panel-tab.active');
+      if (activeTab && activeTab.id === 'tab-stock') renderStock();
+      console.log('📦 Stock actualizado desde Firebase');
+    } else {
+      // Primera vez en Firebase: cargar stock inicial
+      const init = {};
+      STOCK_INICIAL.forEach(p => { init[p.nombre] = { ...p, ingresos: [] }; });
+      saveStockData(init);
+    }
+  });
+}
+
+// Calcular consumo real de TODOS los servicios registrados
+function calcularConsumoTotal() {
+  const stockData = getStockData();
+  const consumo = {};
+
+  // Solo contar servicios posteriores a la fecha de corte del stock
+  const fechaCorteStr = localStorage.getItem('experts_stock_fecha_corte') || STOCK_FECHA_CORTE;
+  const fechaCorte = new Date(fechaCorteStr + 'T00:00:00').getTime();
+
+  allServicios.forEach(s => {
+    // Saltar servicios anteriores al corte de stock
+    if (s.timestamp && s.timestamp < fechaCorte) return;
+
+    (s.quimicos || []).forEach(q => {
+      if (!q.prod) return;
+
+      const stockNombre = buscarStockNombre(q.prod, stockData);
+      if (!stockNombre) return; // Producto no mapeado, ignorar
+
+      const stockItem = stockData[stockNombre];
+      if (!stockItem) return;
+
+      const litrosQ = parseFloat(q.litros) || parseFloat(s.litros) || 0;
+      let cant = parseFloat(q.cant) || 0;
+      const unitRaw = (q.unit || '').toLowerCase();
+      // 'cc' era la unidad anterior — tratarlo igual que 'ml' (concentración por litro de caldo)
+      const unit = unitRaw === 'cc' ? 'ml' : unitRaw;
+      const stockUnit = (stockItem.unidad || '').toLowerCase();
+
+      // Convertir a la unidad del stock
+      // ml = ml por litro de caldo → multiplicar por litros de caldo del servicio
+      if (unit === 'ml' && litrosQ > 0) {
+        const mlTotal = cant * litrosQ;               // ml/L × L = ml totales
+        if (stockUnit === 'lt') cant = mlTotal / 1000; // ml → lt
+        else if (stockUnit === 'ml') cant = mlTotal;
+        else cant = mlTotal / 1000;
+      } else if (unit === 'ml') {
+        // Sin litros de caldo — asumir cantidad directa
+        if (stockUnit === 'lt') cant = cant / 1000;
+        else cant = cant / 1000;
+      } else if (unit === 'lt') {
+        cant = cant; // ya en lt
+      } else if (unit === 'gr') {
+        if (stockUnit === 'kg') cant = cant / 1000;
+        else cant = cant / 1000;
+      } else if (unit === 'kg') {
+        cant = cant; // ya en kg
+      } else if (unit === 'unid.' || unit === 'unid') {
+        cant = cant; // unidades directas
+      } else {
+        cant = cant; // sin conversión
+      }
+
+      if (!consumo[stockNombre]) consumo[stockNombre] = 0;
+      consumo[stockNombre] += cant;
+    });
+  });
+
+  return consumo;
+}
+
+function renderStock() {
+  // Mostrar fecha de corte en UI
+  const fechaCorteStr = localStorage.getItem('experts_stock_fecha_corte') || STOCK_FECHA_CORTE;
+  const lbl = document.getElementById('stock_fecha_corte_label');
+  if (lbl) {
+    const d = new Date(fechaCorteStr + 'T12:00');
+    lbl.textContent = d.toLocaleDateString('es-AR', { day:'2-digit', month:'long', year:'numeric' });
+  }
+
+  const stockData = getStockData();
+  const consumoTotal = calcularConsumoTotal();
+  const grid = document.getElementById('stock_grid');
+  const alertasDiv = document.getElementById('stock_alertas');
+
+  // Debug: mostrar qué químicos NO están siendo mapeados
+  const noMapeados = new Set();
+  allServicios.forEach(s => {
+    (s.quimicos||[]).forEach(q => {
+      if (!q.prod) return;
+      const mapped = buscarStockNombre(q.prod, stockData);
+      if (!mapped) noMapeados.add(q.prod);
+    });
+  });
+  if (noMapeados.size > 0) {
+    console.warn('⚠️ Productos no mapeados al stock:', [...noMapeados]);
+  }
+
+  const items = Object.values(stockData).map(p => {
+    const consumido = consumoTotal[p.nombre] || 0;
+    const actual = Math.max(0, p.stock - consumido);
+    return { ...p, consumido, actual };
+  });
+
+  // Alertas stock bajo
+  const bajo = items.filter(p => p.actual <= p.minimo);
+  if (bajo.length > 0) {
+    alertasDiv.innerHTML = `
+      <div style="background:rgba(204,26,26,0.12);border:1.5px solid rgba(204,26,26,0.4);border-radius:10px;padding:12px 16px;margin-bottom:4px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;font-weight:800;color:#f87171;margin-bottom:6px;">⚠️ STOCK BAJO — Solicitar a proveedores:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${bajo.map(p => `<span style="background:rgba(204,26,26,0.2);border:1px solid rgba(204,26,26,0.4);border-radius:20px;padding:4px 12px;font-family:'Barlow Condensed',sans-serif;font-size:0.82rem;font-weight:700;color:#f87171;">🔴 ${p.nombre}: ${p.actual.toFixed(2)} ${p.unidad}</span>`).join('')}
+        </div>
+      </div>`;
+  } else {
+    alertasDiv.innerHTML = `<div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:10px 16px;margin-bottom:4px;font-family:'Barlow Condensed',sans-serif;font-size:0.85rem;color:#22c55e;">✅ Todo el stock está sobre el mínimo</div>`;
+  }
+
+  // Grid de productos
+  const maxStock = Math.max(...items.map(p => p.stock), 1);
+  grid.innerHTML = items.map(p => {
+    const pct = Math.max(0, Math.min(100, (p.actual / p.stock) * 100));
+    const esBajo = p.actual <= p.minimo;
+    const barColor = esBajo ? '#cc1a1a' : p.actual <= p.minimo * 2 ? '#f59e0b' : '#22c55e';
+    return `
+    <div style="background:var(--surface);border:1px solid ${esBajo ? 'rgba(204,26,26,0.4)' : 'var(--border)'};border-radius:12px;padding:14px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;color:var(--text);">
+          ${esBajo ? '🔴' : '🟢'} ${p.nombre}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="text-align:right;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;color:${barColor};">${p.actual.toFixed(2)}</div>
+            <div style="font-size:0.65rem;color:var(--muted);">${p.unidad} restantes</div>
+          </div>
+          <button onclick="abrirStockIngreso('${p.nombre}')" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:5px 10px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:0.78rem;font-weight:700;cursor:pointer;white-space:nowrap;">+ Ingreso</button>
+        </div>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;height:10px;overflow:hidden;margin-bottom:6px;">
+        <div style="width:${pct}%;height:100%;background:${barColor};border-radius:6px;transition:width .5s ease;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--muted);">
+        <span>Stock inicial: ${p.stock} ${p.unidad}</span>
+        <span>Consumido: ${p.consumido.toFixed(2)} ${p.unidad}</span>
+        <span style="color:${esBajo?'#f87171':'var(--muted)'}">Mínimo: ${p.minimo} ${p.unidad}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Modal ingreso
+function abrirStockIngreso(nombrePresel) {
+  const stockData = getStockData();
+  const sel = document.getElementById('si_producto');
+  sel.innerHTML = Object.keys(stockData).map(n =>
+    `<option value="${n}" ${n === nombrePresel ? 'selected' : ''}>${n}</option>`
+  ).join('');
+  document.getElementById('si_cantidad').value = '';
+  document.getElementById('si_nota').value = '';
+  document.getElementById('stockIngresoModal').style.display = 'flex';
+}
+
+function cerrarStockIngreso() {
+  document.getElementById('stockIngresoModal').style.display = 'none';
+}
+
+function confirmarIngreso() {
+  const nombre = document.getElementById('si_producto').value;
+  const cant = parseFloat(document.getElementById('si_cantidad').value);
+  const nota = document.getElementById('si_nota').value || '';
+  if (!nombre || isNaN(cant) || cant <= 0) { alert('Ingresá un producto y una cantidad válida'); return; }
+
+  const stockData = getStockData();
+  if (!stockData[nombre]) return;
+  stockData[nombre].stock += cant;
+  stockData[nombre].ingresos = stockData[nombre].ingresos || [];
+  stockData[nombre].ingresos.push({ cant, nota, fecha: new Date().toISOString() });
+  saveStockData(stockData);
+
+  cerrarStockIngreso();
+  renderStock();
+
+  const t = document.createElement('div');
+  t.textContent = `✅ +${cant} ${stockData[nombre].unidad} de ${nombre} agregados`;
+  t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#1a6b2f;color:white;font-family:"Barlow Condensed",sans-serif;font-size:0.9rem;font-weight:700;padding:12px 24px;border-radius:30px;z-index:999;white-space:nowrap;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+// Inicializar listener de stock
+setTimeout(initStockListener, 500);
+
+function cambiarFechaCorteStock() {
+  const actual = localStorage.getItem('experts_stock_fecha_corte') || STOCK_FECHA_CORTE;
+  const nueva = prompt('Fecha de inicio del stock (formato YYYY-MM-DD):\nEjemplo: 2026-04-20\n\nSolo se contarán servicios posteriores a esta fecha.', actual);
+  if (nueva && /^\d{4}-\d{2}-\d{2}$/.test(nueva)) {
+    localStorage.setItem('experts_stock_fecha_corte', nueva);
+    renderStock();
+  } else if (nueva) {
+    alert('Formato incorrecto. Usá YYYY-MM-DD. Ejemplo: 2026-04-20');
+  }
+}
+
+
+// ══════════════════════════════════════════
+// RESUMEN SEMANAL
+// ══════════════════════════════════════════
+let resumenOffset = 0; // 0 = semana actual, -1 = anterior, etc.
+
+function getLunesDomingo(offset) {
+  const hoy = new Date();
+  const dow = hoy.getDay(); // 0=dom
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7);
+  lunes.setHours(0,0,0,0);
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  domingo.setHours(23,59,59,999);
+  return { lunes, domingo };
+}
+
+function navResumenSemana(dir) {
+  resumenOffset += dir;
+  renderResumenSemanal();
+}
+
+function renderResumenSemanal() {
+  const { lunes, domingo } = getLunesDomingo(resumenOffset);
+  const meses = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const fmt = d => d.getDate() + ' ' + meses[d.getMonth()];
+  document.getElementById('resumen_semana_label').textContent =
+    fmt(lunes) + ' – ' + fmt(domingo) + ' ' + domingo.getFullYear();
+
+  // Filtrar servicios de la semana
+  const svcs = allServicios.filter(s => {
+    if (!s.timestamp) return false;
+    const d = new Date(s.timestamp);
+    return d >= lunes && d <= domingo;
+  });
+
+  // KPIs
+  const total = svcs.length;
+  const cobrados = svcs.filter(s => s.abono).length;
+  const pendientes = total - cobrados;
+  const facturacion = svcs.reduce((sum,s) => sum + (parseFloat(s.monto)||0), 0);
+  const duraciones = svcs.map(s => {
+    const p = (s.duracion||'').split(':').map(Number);
+    return p.length === 3 ? p[0]*60+p[1]+p[2]/60 : 0;
+  }).filter(d => d > 0);
+  const promDur = duraciones.length > 0 ? duraciones.reduce((a,b)=>a+b,0)/duraciones.length : 0;
+
+  const kpisEl = document.getElementById('resumen_kpis');
+  const kpis = [
+    { label: 'Servicios', val: total, color: 'var(--text)' },
+    { label: 'Cobrados', val: cobrados, color: 'var(--green)' },
+    { label: 'Pendientes', val: pendientes, color: pendientes > 0 ? 'var(--danger)' : 'var(--muted)' },
+    { label: 'Facturado', val: facturacion > 0 ? '$' + facturacion.toLocaleString('es-AR') : '$0', color: '#f5a623' },
+    { label: 'Duración Prom.', val: promDur > 0 ? Math.floor(promDur) + 'h ' + Math.round((promDur%1)*60) + 'm' : '—', color: '#60a5fa' },
+  ];
+  kpisEl.innerHTML = kpis.map(k => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;text-align:center;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${k.color};opacity:0.6;"></div>
+      <div style="font-family:var(--font-display);font-size:1.5rem;letter-spacing:1px;color:${k.color};line-height:1;">${k.val}</div>
+      <div style="font-family:var(--font-display);font-size:0.62rem;letter-spacing:2px;color:var(--muted);margin-top:4px;text-transform:uppercase;">${k.label}</div>
+    </div>`).join('');
+
+  // Top 3 Químicos
+  const consumoQ = {};
+  svcs.forEach(s => {
+    (s.quimicos||[]).forEach(q => {
+      if (!q.prod) return;
+      const lq = parseFloat(q.litros) || parseFloat(s.litros) || 0;
+      let cant = parseFloat(q.cant)||0;
+      if (q.unit === 'ml' && lq > 0) cant = cant * lq;
+      consumoQ[q.prod] = (consumoQ[q.prod]||0) + cant;
+    });
+  });
+  const top3 = Object.entries(consumoQ).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const maxQ = top3[0]?.[1] || 1;
+  document.getElementById('resumen_quimicos').innerHTML = top3.length === 0
+    ? `<div style="color:var(--muted);font-size:0.82rem;">Sin consumo registrado esta semana</div>`
+    : top3.map(([prod, cant], i) => `
+      <div class="bar-row" style="margin-bottom:8px;">
+        <div class="bar-label" style="width:120px;">${['🥇','🥈','🥉'][i]} ${prod}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.max(4,(cant/maxQ)*100)}%;">
+            <span class="bar-val">${cant%1===0?cant:cant.toFixed(1)}</span>
+          </div>
+        </div>
+      </div>`).join('');
+
+  // Técnico destacado
+  const porTec = {};
+  svcs.forEach(s => { const t = s.tecnico||'Sin nombre'; porTec[t] = (porTec[t]||0)+1; });
+  const top = Object.entries(porTec).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('resumen_tecnico').innerHTML = top
+    ? `<div style="display:flex;align-items:center;gap:14px;padding:8px 0;">
+        <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0f3318,#1a6b2f);border:2px solid var(--brand);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.2rem;color:white;">${top[0][0].toUpperCase()}</div>
+        <div>
+          <div style="font-family:var(--font-display);font-size:1.1rem;letter-spacing:1px;color:var(--text);">${top[0]}</div>
+          <div style="font-size:0.78rem;color:var(--muted);font-family:var(--font-body);">${top[1]} servicios esta semana</div>
+        </div>
+        <div style="margin-left:auto;font-family:var(--font-display);font-size:2rem;color:var(--green);">${top[1]}</div>
+      </div>`
+    : `<div style="color:var(--muted);font-size:0.82rem;">Sin servicios esta semana</div>`;
+}
+
+// ══════════════════════════════════════════
+// EXPORTAR A EXCEL (CSV descargable)
+// ══════════════════════════════════════════
+function initExportar() {
+  // Set default dates: primer día del mes actual al hoy
+  const hoy = new Date();
+  document.getElementById('export_hasta').value = hoy.toISOString().split('T')[0];
+  const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  document.getElementById('export_desde').value = primerDia.toISOString().split('T')[0];
+  actualizarPreviewExport();
+  
+  // Watch for changes
+  ['export_desde','export_hasta','export_tecnico'].forEach(id => {
+    document.getElementById(id).addEventListener('change', actualizarPreviewExport);
+  });
+}
+
+function getServiciosParaExport() {
+  const desde = document.getElementById('export_desde')?.value;
+  const hasta = document.getElementById('export_hasta')?.value;
+  const tecnico = (document.getElementById('export_tecnico')?.value || '').toLowerCase();
+
+  return allServicios.filter(s => {
+    if (!s.timestamp) return true;
+    const d = new Date(s.timestamp);
+    const dStr = d.toISOString().split('T')[0];
+    if (desde && dStr < desde) return false;
+    if (hasta && dStr > hasta) return false;
+    if (tecnico && !(s.tecnico||'').toLowerCase().includes(tecnico)) return false;
+    return true;
+  }).sort((a,b) => (a.timestamp||0)-(b.timestamp||0));
+}
+
+function actualizarPreviewExport() {
+  const svcs = getServiciosParaExport();
+  const el = document.getElementById('export_preview_count');
+  if (el) el.textContent = svcs.length > 0
+    ? `📊 ${svcs.length} servicio${svcs.length!==1?'s':''} encontrado${svcs.length!==1?'s':''}`
+    : '⚠️ Sin servicios para los filtros seleccionados';
+}
+
+function exportarExcel() {
+  const svcs = getServiciosParaExport();
+  if (svcs.length === 0) { alert('No hay servicios para exportar con los filtros seleccionados.'); return; }
+
+  // Build CSV with BOM for Excel
+  const BOM = '﻿';
+  const headers = ['Fecha','Hora','Cliente','Técnico','Tipo de Servicio','Graduación','Duración','Abonó','Quién Cobró','Monto ($)','Forma de Pago'];
+  
+  const rows = svcs.map(s => {
+    const d = s.timestamp ? new Date(s.timestamp) : null;
+    const fecha = d ? d.toLocaleDateString('es-AR') : s.fecha || '';
+    const hora  = d ? d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : '';
+    return [
+      fecha,
+      hora,
+      s.cliente || '',
+      s.tecnico || '',
+      s.tipoServicio || '',
+      s.graduacionPlaga || '',
+      s.duracion || '',
+      s.abono ? 'Sí' : 'No',
+      s.quienCobro || '',
+      s.monto || '',
+      s.pago || ''
+    ].map(v => '"' + String(v).replace(/"/g,'""') + '"').join(',');
+  });
+
+  const csv = BOM + [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const desde = document.getElementById('export_desde')?.value || 'todo';
+  const hasta = document.getElementById('export_hasta')?.value || 'hoy';
+  a.href = url;
+  a.download = `experts_servicios_${desde}_${hasta}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  // Toast
+  const t = document.createElement('div');
+  t.textContent = `✅ ${svcs.length} servicios exportados`;
+  t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--brand);color:white;font-family:var(--font-display);font-size:0.9rem;letter-spacing:1px;padding:12px 24px;border-radius:6px;z-index:999;white-space:nowrap;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+</script>
+</body>
+</html>
